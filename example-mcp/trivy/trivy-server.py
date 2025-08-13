@@ -1,10 +1,10 @@
 
+import argparse
 from fastmcp import FastMCP
 from fastmcp.server.middleware.logging import StructuredLoggingMiddleware
 from fastmcp.server.dependencies import get_http_request
 from starlette.requests import Request
 
-    
 mcp = FastMCP("Demo 🚀")
 mcp.add_middleware(StructuredLoggingMiddleware(include_payloads=True))
 
@@ -27,7 +27,10 @@ def lower(s: str) -> str:
 
 
 if __name__ == "__main__":
-    # mcp.run()
-    mcp.run(transport="http", host="0.0.0.0", port=8888, log_level="TRACE")
+    parser = argparse.ArgumentParser(description="FastMCP Trivy Server")
+    parser.add_argument("--port", type=int, default=8888, help="Port to run the server on")
+    args = parser.parse_args()
+
+    mcp.run(transport="http", host="0.0.0.0", port=args.port, log_level="TRACE")
 
 
