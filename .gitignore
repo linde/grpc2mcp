@@ -1,0 +1,4 @@
+vendor/
+.venv/
+.vscode/
+__debug_bin*
