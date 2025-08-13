@@ -6,7 +6,7 @@ The proxy handles the gRPC service defined in `proto/mcp.proto` and forwards the
 
 ## Running the Example MCP Server
 
-An example MCP server is provided in this repository built using fastmcp. To run it, you first need to activate the Python virtual environment and then run the server script.
+An example MCP server is provided in this repository built using [fastmcp](https://gofastmcp.com/). To run it, you first need to activate the Python virtual environment and then run the server script.
 
 ```bash
 # Activate the virtual environment
@@ -16,7 +16,8 @@ source .venv/bin/activate
 python example-mcp/trivy/trivy-server.py
 ```
 
-The example MCP server will run on `localhost:8888` by default.
+The example MCP server will run on `localhost:8888` by default. You can specify 
+other ports via `--port`.
 
 ## Running the Proxy
 
@@ -41,12 +42,9 @@ To start the proxy and have it connect to the example MCP server running on `loc
 go run main.go proxy --port 8080 --mcp-host localhost --mcp-port 8888
 ```
 
-## Example Usage with `grpcurl`
+### Example Usage with `grpcurl`
 
-Once the proxy is running, you can use tools like `grpcurl` to interact with it.
-
-### Call a Tool
-
+Once the proxy is running, you can use tools like `grpcurl` to interact with it. 
 The following call examples with `add`, `mult` and `lower` tools with appropriate arguments:
 
 ```bash
@@ -58,15 +56,13 @@ grpcurl -plaintext -d '{"name": "lower", "arguments": {"s": "thisIsMixedCase"}}'
     localhost:8080 mcp.ModelContextProtocol/CallTool
 ```
 
-### List Available Tools
-
 This example lists the tools available from the MCP server.
 
 ```bash
 grpcurl -plaintext localhost:8080 mcp.ModelContextProtocol/ListTools
 ```
 
-### MCP session initiation
+## MCP session initiation
 
 This grpc proxy initiatives a session with the MCP server as follows. For the 
 interest of simplicity, at the moment it has only one session for all requests.
