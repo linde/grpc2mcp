@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -53,32 +52,17 @@ func NewServer(mcpHost string, mcpPort int, mcpUri string) (*Server, error) {
 func (s *Server) initialize(ctx context.Context) error {
 
 	log.Println("Initializing MCP session...")
-	initializeBody := map[string]any{
-		"jsonrpc": "2.0",
-		"id":      "1",
-		"method":  "initialize",
-		"params": map[string]any{
-			"protocolVersion": "2025-06-18",
-			"capabilities":    map[string]any{},
-			"clientInfo": map[string]any{
-				"name":    "curl",
-				"version": "1.0",
-			},
-		},
-	}
-	jsonRPCReqBytes, err := json.Marshal(initializeBody)
-	if err != nil {
-		return fmt.Errorf("failed to marshal initialize request: %w", err)
+
+	params := map[string]any{
+		"protocolVersion": "2025-06-18",
+		"capabilities":    map[string]string{},
+		"clientInfo":      map[string]string{"name": "curl", "version": "1.0"},
 	}
 
-	url := fmt.Sprintf("http://%s:%d%s", s.mcpHost, s.mcpPort, s.mcpUri)
-
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonRPCReqBytes))
+	httpReq, err := NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "initialize", params)
 	if err != nil {
-		return fmt.Errorf("failed to create initialize http request: %w", err)
+		return status.Errorf(codes.Internal, "failed 'initialize' jsonrpc request: %v", err)
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Accept", "application/json, text/event-stream")
 
 	httpResp, err := s.httpClient.Do(httpReq)
 	if err != nil {
@@ -93,13 +77,12 @@ func (s *Server) initialize(ctx context.Context) error {
 
 	mcpSessionId, ok := httpResp.Header[MCP_SESSION_ID_HEADER]
 	if !ok || len(mcpSessionId) < 1 {
-		return fmt.Errorf("did not find session ID header: %s", MCP_SESSION_ID_HEADER)
+		return fmt.Errorf("did not find MCP Session ID header: %s", MCP_SESSION_ID_HEADER)
 	}
 
 	s.sessionID = mcpSessionId[0]
 
 	return nil
-
 }
 
 // initialize sends the 'initialize' request and synchronously parses the SSE response to get a session ID.

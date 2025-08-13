@@ -56,7 +56,8 @@ func NewJSONRPCRequest(ctx context.Context, host string, port int, uri string,
 
 	if params != nil {
 		jsonRPCReq.Params = params
-		jsonRPCReq.ID = rand.Int() // TODO is this safe to assume ok to ad ID?
+		// TODO is this safe to assume ok to add ID when there are params?
+		jsonRPCReq.ID = rand.Int()
 	}
 
 	jsonRPCReqBytes, err := json.Marshal(jsonRPCReq)
