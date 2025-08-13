@@ -106,23 +106,11 @@ func (s *Server) initialize(ctx context.Context) error {
 func (s *Server) ackInitialized(ctx context.Context) error {
 
 	log.Println("acking MCP session initializaton ...")
-	initializeBody := map[string]any{
-		"jsonrpc": "2.0",
-		"method":  "notifications/initialized",
-	}
-	jsonRPCReqBytes, err := json.Marshal(initializeBody)
-	if err != nil {
-		return fmt.Errorf("failed initialized request: %w", err)
-	}
 
-	url := fmt.Sprintf("http://%s:%d%s", s.mcpHost, s.mcpPort, s.mcpUri)
-
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonRPCReqBytes))
+	httpReq, err := NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "notifications/initialized", nil)
 	if err != nil {
-		return fmt.Errorf("failed 'initialized' http request: %w", err)
+		return status.Errorf(codes.Internal, "failed 'initialized' http request: %v", err)
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Accept", "application/json, text/event-stream")
 	httpReq.Header.Set(MCP_SESSION_ID_HEADER, s.sessionID)
 
 	httpResp, err := s.httpClient.Do(httpReq)
@@ -196,7 +184,7 @@ func (s *Server) CallTool(ctx context.Context, req *mcp.CallToolRequest) (*mcp.C
 		return nil, status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
 	}
 
-	log.Printf("Parsed jsonRpcResponseParts: %v", jsonRpcResponseParts)
+	// log.Printf("Parsed jsonRpcResponseParts: %v", jsonRpcResponseParts)
 
 	var jsonRPCResp JSONRPCResponse
 	if err := json.Unmarshal([]byte(jsonRpcResponseParts["data"]), &jsonRPCResp); err != nil {
@@ -209,7 +197,7 @@ func (s *Server) CallTool(ctx context.Context, req *mcp.CallToolRequest) (*mcp.C
 
 	var tempResult struct {
 		Content           []json.RawMessage `json:"content"`
-		StructuredContent json.RawMessage `json:"structuredContent"`
+		StructuredContent json.RawMessage   `json:"structuredContent"`
 		IsError           bool              `json:"isError"`
 	}
 
@@ -292,7 +280,7 @@ func (s *Server) ListTools(ctx context.Context, req *mcp.ListToolsRequest) (*mcp
 		return nil, status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
 	}
 
-	log.Printf("Parsed jsonRpcResponseParts: %v", jsonRpcResponseParts)
+	// log.Printf("Parsed jsonRpcResponseParts: %v", jsonRpcResponseParts)
 
 	var jsonRPCResp JSONRPCResponse
 	if err := json.Unmarshal([]byte(jsonRpcResponseParts["data"]), &jsonRPCResp); err != nil {

@@ -52,11 +52,11 @@ func NewJSONRPCRequest(ctx context.Context, host string, port int, uri string,
 	jsonRPCReq := JSONRPCRequest{
 		JSONRPC: "2.0",
 		Method:  method,
-		ID:      rand.Int(),
 	}
 
 	if params != nil {
 		jsonRPCReq.Params = params
+		jsonRPCReq.ID = rand.Int() // TODO is this safe to assume ok to ad ID?
 	}
 
 	jsonRPCReqBytes, err := json.Marshal(jsonRPCReq)
@@ -79,8 +79,8 @@ func NewJSONRPCRequest(ctx context.Context, host string, port int, uri string,
 type JSONRPCRequest struct {
 	JSONRPC string `json:"jsonrpc"`
 	Method  string `json:"method"`
-	Params  any    `json:"params"`
-	ID      int    `json:"id"`
+	Params  any    `json:"params,omitempty"`
+	ID      int    `json:"id,omitempty"`
 }
 
 // JSONRPCResponse represents a JSON-RPC response object.
