@@ -49,7 +49,6 @@ The following call examples with `add`, `mult` and `lower` tools with appropriat
 arguments after first initiailizing an MCP session:
 
 
-
 ```bash
 
 # first initialize to see the whole response
@@ -71,3 +70,8 @@ grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
     -d '{"method": "tools/call", "params": {"name": "lower", "arguments": {"s": "thisIsMixedCase"}}}' \
     localhost:8080 mcp.ModelContextProtocol/CallMethod
 
+
+# also we can call to list the tools
+grpcurl -H "${MCP_SESSION_HEADER}" -plaintext localhost:8080 mcp.ModelContextProtocol/ListTools
+
+```

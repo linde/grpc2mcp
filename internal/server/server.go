@@ -296,8 +296,8 @@ func (s *Server) ListTools(ctx context.Context, req *mcp.ListToolsRequest) (*mcp
 		listToolsResult.NextCursor = &tempResult.NextCursor
 	}
 
-	// This struct mirrors the JSON structure from the Python server
-	type pythonTool struct {
+	// This struct mirrors the JSON structure from MCP
+	type mcpTool struct {
 		Name         string          `json:"name"`
 		Description  string          `json:"description"`
 		InputSchema  json.RawMessage `json:"inputSchema"`
@@ -307,7 +307,7 @@ func (s *Server) ListTools(ctx context.Context, req *mcp.ListToolsRequest) (*mcp
 	}
 
 	for _, rawTool := range tempResult.Tools {
-		var pt pythonTool
+		var pt mcpTool
 		if err := json.Unmarshal(rawTool, &pt); err != nil {
 			log.Printf("Error unmarshaling tool: %s", string(rawTool))
 			return nil, status.Errorf(codes.Internal, "failed to unmarshal tool into pythonTool: %v", err)
