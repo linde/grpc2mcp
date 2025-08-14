@@ -48,8 +48,10 @@ func parseJsonRpcResponseBody(body []byte) (map[string]string, error) {
 	return parsedData, nil
 }
 
-func NewJSONRPCRequest(ctx context.Context, host string, port int, uri string,
-	method string, params proto.Message) (*http.Request, error) {
+func NewJSONRPCRequest(
+	ctx context.Context, host string, port int, uri string,
+	method string, params proto.Message, additionalHeaders map[string]string,
+) (*http.Request, error) {
 
 	jsonRPCReq := JSONRPCRequest{
 		JSONRPC: "2.0",
@@ -73,6 +75,10 @@ func NewJSONRPCRequest(ctx context.Context, host string, port int, uri string,
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Accept", "application/json, text/event-stream")
+
+	for header, val := range additionalHeaders {
+		httpReq.Header.Set(header, val)
+	}
 
 	return httpReq, nil
 }
@@ -103,7 +109,7 @@ type JSONRPCError struct {
 func getJSONRPCRequestResponse(ctx context.Context,
 	host string, port int, uri string, method string, paramSrc proto.Message, headers map[string]string) (map[string]string, error) {
 
-	httpReq, err := NewJSONRPCRequest(ctx, host, port, uri, method, paramSrc)
+	httpReq, err := NewJSONRPCRequest(ctx, host, port, uri, method, paramSrc, nil)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create http request: %v", err)
 	}

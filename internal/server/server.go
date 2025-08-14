@@ -74,7 +74,7 @@ func (s *Server) doInitializeJsonRpc(ctx context.Context, req *mcp.InitializeReq
 
 	log.Println("Initializing MCP session...")
 
-	httpReq, err := NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "initialize", req)
+	httpReq, err := NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "initialize", req, nil)
 	if err != nil {
 		return "", status.Errorf(codes.Internal, "failed 'initialize' jsonrpc request: %v", err)
 	}
@@ -103,11 +103,11 @@ func (s *Server) doInitializedJsonRpc(ctx context.Context, sessionID string) err
 
 	log.Println("acking MCP session initializaton ...")
 
-	httpReq, err := NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "notifications/initialized", nil)
+	sessionHeader := map[string]string{MCP_SESSION_ID_HEADER: sessionID}
+	httpReq, err := NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "notifications/initialized", nil, sessionHeader)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed 'initialized' http request: %v", err)
 	}
-	httpReq.Header.Set(MCP_SESSION_ID_HEADER, sessionID)
 
 	httpResp, err := s.httpClient.Do(httpReq)
 	if err != nil {
