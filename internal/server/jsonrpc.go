@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -99,18 +100,53 @@ type JSONRPCError struct {
 	Data    any    `json:"data,omitempty"`
 }
 
-// // ClientCapabilities represents the capabilities of the client.
-// type ClientCapabilities struct{}
+func getJSONRPCRequestResponse(ctx context.Context,
+	host string, port int, uri string, method string, paramSrc any, headers map[string]string) (map[string]string, error) {
 
-// // Implementation represents the client implementation information.
-// type Implementation struct {
-// 	Name    string `json:"name"`
-// 	Version string `json:"version"`
-// }
+	var params map[string]any
 
-// // InitializeParams represents the parameters for the 'initialize' request.
-// type InitializeParams struct {
-// 	ProtocolVersion string             `json:"protocolVersion"`
-// 	Capabilities    ClientCapabilities `json:"capabilities"`
-// 	ClientInfo      Implementation     `json:"clientInfo"`
-// }
+	if paramSrc != nil {
+		// Marshal the protobuf Struct to JSON bytes
+		paramsBytes, err := json.Marshal(paramSrc)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to marshal params to json: %v", err)
+		}
+		// Unmarshal the JSON bytes into a map[string]any
+		if err := json.Unmarshal(paramsBytes, &params); err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to unmarshal params to map: %v", err)
+		}
+	} else {
+		params = nil
+	}
+
+	httpReq, err := NewJSONRPCRequest(ctx, host, port, uri, method, params)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to create http request: %v", err)
+	}
+	for header, value := range headers {
+		httpReq.Header.Set(header, value)
+	}
+
+	client := http.Client{}
+	httpResp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "failed to call mcp server: %v", err)
+	}
+	defer httpResp.Body.Close()
+
+	respBody, err := io.ReadAll(httpResp.Body)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to read mcp server response: %v", err)
+	}
+
+	if httpResp.StatusCode != http.StatusOK {
+		return nil, status.Errorf(codes.Unavailable, "mcp server returned non-200 status: %d", httpResp.StatusCode)
+	}
+
+	jsonRpcResponseParts, err := parseJsonRpcResponseBody(respBody)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
+	}
+
+	return jsonRpcResponseParts, nil
+}

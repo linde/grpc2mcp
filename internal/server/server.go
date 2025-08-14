@@ -62,7 +62,7 @@ func NewServer(mcpHost string, mcpPort int, mcpUri string) (*Server, error) {
 		mcpHost:    mcpHost,
 		mcpPort:    mcpPort,
 		mcpUri:     mcpUri,
-		httpClient: &http.Client{},
+		httpClient: &http.Client{}, // TODO why is this shared?
 	}
 
 	return s, nil
@@ -174,39 +174,8 @@ func (s *Server) CallMethod(ctx context.Context, req *mcp.CallMethodRequest) (*m
 		return nil, status.Errorf(codes.Internal, "could not get session id (%s) from context", MCP_SESSION_ID_HEADER)
 	}
 
-	var params map[string]any
-	// Marshal the protobuf Struct to JSON bytes
-	paramsBytes, err := json.Marshal(req.Params)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to marshal params to json: %v", err)
-	}
-	// Unmarshal the JSON bytes into a map[string]any
-	if err := json.Unmarshal(paramsBytes, &params); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal params to map: %v", err)
-	}
-
-	httpReq, err := NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, req.Method, params)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create http request: %v", err)
-	}
-	httpReq.Header.Set(MCP_SESSION_ID_HEADER, sessionID)
-
-	httpResp, err := s.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, status.Errorf(codes.Unavailable, "failed to call mcp server: %v", err)
-	}
-	defer httpResp.Body.Close()
-
-	respBody, err := io.ReadAll(httpResp.Body)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to read mcp server response: %v", err)
-	}
-
-	if httpResp.StatusCode != http.StatusOK {
-		return nil, status.Errorf(codes.Unavailable, "mcp server returned non-200 status: %d", httpResp.StatusCode)
-	}
-
-	jsonRpcResponseParts, err := parseJsonRpcResponseBody(respBody)
+	headers := map[string]string{MCP_SESSION_ID_HEADER: sessionID}
+	jsonRpcResponseParts, err := getJSONRPCRequestResponse(ctx, s.mcpHost, s.mcpPort, s.mcpUri, req.Method, req.Params, headers)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
 	}
@@ -237,42 +206,15 @@ func (s *Server) ListTools(ctx context.Context, req *mcp.ListToolsRequest) (*mcp
 		return nil, status.Errorf(codes.Internal, "could not get session id (%s) from context", MCP_SESSION_ID_HEADER)
 	}
 
-	var params map[string]any
-	paramsBytes, err := json.Marshal(req)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to marshal request to json: %v", err)
-	}
-	if err := json.Unmarshal(paramsBytes, &params); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal params to map: %v", err)
-	}
-
-	httpReq, err := NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "tools/list", params)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create http request: %v", err)
-	}
-	httpReq.Header.Set(MCP_SESSION_ID_HEADER, sessionID)
-
-	httpResp, err := s.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, status.Errorf(codes.Unavailable, "failed to call mcp server: %v", err)
-	}
-	defer httpResp.Body.Close()
-
-	respBody, err := io.ReadAll(httpResp.Body)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to read mcp server response: %v", err)
-	}
-
-	if httpResp.StatusCode != http.StatusOK {
-		return nil, status.Errorf(codes.Unavailable, "mcp server returned non-200 status: %d", httpResp.StatusCode)
-	}
-
-	jsonRpcResponseParts, err := parseJsonRpcResponseBody(respBody)
+	headers := map[string]string{MCP_SESSION_ID_HEADER: sessionID}
+	jsonRpcResponseParts, err := getJSONRPCRequestResponse(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "tools/list", req, headers)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
 	}
 
-	// log.Printf("Parsed jsonRpcResponseParts: %v", jsonRpcResponseParts)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
+	}
 
 	var jsonRPCResp JSONRPCResponse
 	if err := json.Unmarshal([]byte(jsonRpcResponseParts["data"]), &jsonRPCResp); err != nil {
