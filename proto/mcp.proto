@@ -12,9 +12,21 @@ option go_package = "grpc2mcp/pb";
 
 service ModelContextProtocol {
     // Tools
+    rpc Initialize(InitializeRequest) returns (InitializeResult);
     rpc CallTool(CallToolRequest) returns (CallToolResult);
     rpc ListTools(ListToolsRequest) returns (ListToolsResult);
     rpc WatchToolList(WatchToolListRequest) returns (stream ToolListChangedNotification);
+}
+
+
+// ----------------------------------------------------------------
+// Initialize Messages
+// ----------------------------------------------------------------
+
+message InitializeRequest {}
+
+message InitializeResult {
+  optional bool is_error = 3;
 }
 
 

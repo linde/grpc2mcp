@@ -19,6 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	ModelContextProtocol_Initialize_FullMethodName    = "/mcp.ModelContextProtocol/Initialize"
 	ModelContextProtocol_CallTool_FullMethodName      = "/mcp.ModelContextProtocol/CallTool"
 	ModelContextProtocol_ListTools_FullMethodName     = "/mcp.ModelContextProtocol/ListTools"
 	ModelContextProtocol_WatchToolList_FullMethodName = "/mcp.ModelContextProtocol/WatchToolList"
@@ -29,6 +30,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ModelContextProtocolClient interface {
 	// Tools
+	Initialize(ctx context.Context, in *InitializeRequest, opts ...grpc.CallOption) (*InitializeResult, error)
 	CallTool(ctx context.Context, in *CallToolRequest, opts ...grpc.CallOption) (*CallToolResult, error)
 	ListTools(ctx context.Context, in *ListToolsRequest, opts ...grpc.CallOption) (*ListToolsResult, error)
 	WatchToolList(ctx context.Context, in *WatchToolListRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ToolListChangedNotification], error)
@@ -40,6 +42,16 @@ type modelContextProtocolClient struct {
 
 func NewModelContextProtocolClient(cc grpc.ClientConnInterface) ModelContextProtocolClient {
 	return &modelContextProtocolClient{cc}
+}
+
+func (c *modelContextProtocolClient) Initialize(ctx context.Context, in *InitializeRequest, opts ...grpc.CallOption) (*InitializeResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InitializeResult)
+	err := c.cc.Invoke(ctx, ModelContextProtocol_Initialize_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *modelContextProtocolClient) CallTool(ctx context.Context, in *CallToolRequest, opts ...grpc.CallOption) (*CallToolResult, error) {
@@ -86,6 +98,7 @@ type ModelContextProtocol_WatchToolListClient = grpc.ServerStreamingClient[ToolL
 // for forward compatibility.
 type ModelContextProtocolServer interface {
 	// Tools
+	Initialize(context.Context, *InitializeRequest) (*InitializeResult, error)
 	CallTool(context.Context, *CallToolRequest) (*CallToolResult, error)
 	ListTools(context.Context, *ListToolsRequest) (*ListToolsResult, error)
 	WatchToolList(*WatchToolListRequest, grpc.ServerStreamingServer[ToolListChangedNotification]) error
@@ -98,6 +111,9 @@ type ModelContextProtocolServer interface {
 // pointer dereference when methods are called.
 type UnimplementedModelContextProtocolServer struct{}
 
+func (UnimplementedModelContextProtocolServer) Initialize(context.Context, *InitializeRequest) (*InitializeResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Initialize not implemented")
+}
 func (UnimplementedModelContextProtocolServer) CallTool(context.Context, *CallToolRequest) (*CallToolResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CallTool not implemented")
 }
@@ -125,6 +141,24 @@ func RegisterModelContextProtocolServer(s grpc.ServiceRegistrar, srv ModelContex
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&ModelContextProtocol_ServiceDesc, srv)
+}
+
+func _ModelContextProtocol_Initialize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InitializeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelContextProtocolServer).Initialize(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModelContextProtocol_Initialize_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelContextProtocolServer).Initialize(ctx, req.(*InitializeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _ModelContextProtocol_CallTool_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -181,6 +215,10 @@ var ModelContextProtocol_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "mcp.ModelContextProtocol",
 	HandlerType: (*ModelContextProtocolServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Initialize",
+			Handler:    _ModelContextProtocol_Initialize_Handler,
+		},
 		{
 			MethodName: "CallTool",
 			Handler:    _ModelContextProtocol_CallTool_Handler,

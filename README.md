@@ -44,72 +44,36 @@ go run main.go proxy --port 8080 --mcp-host localhost --mcp-port 8888
 
 ### Example Usage with `grpcurl`
 
-Once the proxy is running, you can use tools like `grpcurl` to interact with it. 
-The following call examples with `add`, `mult` and `lower` tools with appropriate arguments:
+Once the proxy is running, you can use tools like `grpcurl` to try things out. 
+The following call examples with `add`, `mult` and `lower` tools with appropriate 
+arguments after first initiailizing an MCP session:
+
+
 
 ```bash
-grpcurl -plaintext -d '{"name": "add", "arguments": {"a": 20, "b": 1}}' \
+
+# first initialize to see the whole response
+ grpcurl -v -plaintext   localhost:8080  mcp.ModelContextProtocol/Initialize
+
+# try it again with grep to capture the value of the "mcp-session-id" header line
+MCP_SESSION_HEADER=$(grpcurl -v -plaintext   localhost:8080    mcp.ModelContextProtocol/Initialize | grep mcp-session-id)
+
+# now use that header with the session id to make any other calls
+grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
+    -d '{"name": "add", "arguments": {"a": 20, "b": 1}}' \
     localhost:8080    mcp.ModelContextProtocol/CallTool
-grpcurl -plaintext -d '{"name": "mult", "arguments": {"a": 20, "b": 1}}' \
+
+grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
+    -d '{"name": "mult", "arguments": {"a": 20, "b": 1}}' \
     localhost:8080    mcp.ModelContextProtocol/CallTool 
-grpcurl -plaintext -d '{"name": "lower", "arguments": {"s": "thisIsMixedCase"}}' \
+
+grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
+    -d '{"name": "lower", "arguments": {"s": "thisIsMixedCase"}}' \
     localhost:8080 mcp.ModelContextProtocol/CallTool
 ```
 
 This example lists the tools available from the MCP server.
 
 ```bash
-grpcurl -plaintext localhost:8080 mcp.ModelContextProtocol/ListTools
-```
-
-## MCP session initiation
-
-This grpc proxy initiatives a session with the MCP server as follows. For the 
-interest of simplicity, at the moment it has only one session for all requests.
-
-```bash
-# start initialization
-curl -i -X POST -H "Accept: application/json, text/event-stream" \
-    -H "Content-Type: application/json"  http://localhost:8888/mcp/ \
-     -d @- http://localhost:8888/mcp/ <<EOF
-{ 
-    "jsonrpc": "2.0", 
-    "id": "1", 
-    "method": "initialize", 
-    "params": { 
-        "protocolVersion": "2025-06-18", 
-        "capabilities": {}, 
-        "clientInfo": { "name": "curl", "version": "1.0" } 
-    }
-}
-EOF 
-
-# get the mcp-session-id header and export it as MCP_SESSION_ID
-export MCP_SESSION_ID=[get it from above curl call response header]
-
-# send confirmation the session is initialated, should return 202 Accepted
-curl -i -X POST -H "Accept: application/json, text/event-stream" \
-    -H "Content-Type: application/json" \
-    -H "mcp-session-id: ${MCP_SESSION_ID}" \
-    -d '{ "jsonrpc": "2.0", "method": "notifications/initialized"}' http://localhost:8888/mcp/
-
-curl -i -X POST -H "Accept: application/json, text/event-stream" \
-     -H "Content-Type: application/json" \
-     -H "mcp-session-id: ${MCP_SESSION_ID}" \
-     -d @- http://localhost:8888/mcp/ <<EOF
-{
-    "jsonrpc": "2.0",
-    "id": "1",
-    "method": "tools/call",
-    "params": {
-        "name": "add",
-        "arguments": {
-            "a": 10,
-            "b": 100
-        }
-    }
-}   
-EOF
-
-
+grpcurl -H "${MCP_SESSION_HEADER}" -plaintext localhost:8080 mcp.ModelContextProtocol/ListTools
 ```
