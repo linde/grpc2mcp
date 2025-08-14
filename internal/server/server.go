@@ -69,17 +69,11 @@ func NewServer(mcpHost string, mcpPort int, mcpUri string) (*Server, error) {
 }
 
 // initialize sends the 'initialize' request and synchronously parses the SSE response to get a session ID.
-func (s *Server) doInitializeJsonRpc(ctx context.Context) (string, error) {
+func (s *Server) doInitializeJsonRpc(ctx context.Context, req *mcp.InitializeRequest) (string, error) {
 
 	log.Println("Initializing MCP session...")
 
-	params := map[string]any{
-		"protocolVersion": "2025-06-18",
-		"capabilities":    map[string]string{},
-		"clientInfo":      map[string]string{"name": "curl", "version": "1.0"},
-	}
-
-	httpReq, err := NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "initialize", params)
+	httpReq, err := NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "initialize", req)
 	if err != nil {
 		return "", status.Errorf(codes.Internal, "failed 'initialize' jsonrpc request: %v", err)
 	}
@@ -132,7 +126,7 @@ func (s *Server) doInitializedJsonRpc(ctx context.Context, sessionID string) err
 func (s *Server) Initialize(ctx context.Context, req *mcp.InitializeRequest) (*mcp.InitializeResult, error) {
 	log.Println("Initialize called...")
 
-	sessionID, err := s.doInitializeJsonRpc(ctx)
+	sessionID, err := s.doInitializeJsonRpc(ctx, req)
 	if err != nil || sessionID == "" {
 		return nil, status.Errorf(codes.Internal, "failed to initialize MCP session: %v", err)
 	}
@@ -147,6 +141,7 @@ func (s *Server) Initialize(ctx context.Context, req *mcp.InitializeRequest) (*m
 
 	log.Printf("Initialize and Initiailized complete for: %s", sessionID)
 
+	// TODO: This should be a real response from the server
 	return &mcp.InitializeResult{}, nil
 }
 
@@ -166,8 +161,8 @@ func (s *Server) Start(port int) error {
 }
 
 // CallMethod implements the CallMethod RPC.
-func (s *Server) CallMethod(ctx context.Context, req *mcp.CallMethodRequest) (*mcp.CallMethodResult, error) {
-	log.Printf("CallMethod requested for method '%s': %v", req.Method, req)
+func (s *Server) CallMethod(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	log.Printf("CallMethod requested for method '%s': %v", req.Name, req)
 
 	sessionID, ok := ctx.Value(MCP_SESSION_ID_HEADER).(string)
 	if !ok {
@@ -175,7 +170,7 @@ func (s *Server) CallMethod(ctx context.Context, req *mcp.CallMethodRequest) (*m
 	}
 
 	headers := map[string]string{MCP_SESSION_ID_HEADER: sessionID}
-	jsonRpcResponseParts, err := getJSONRPCRequestResponse(ctx, s.mcpHost, s.mcpPort, s.mcpUri, req.Method, req.Params, headers)
+	jsonRpcResponseParts, err := getJSONRPCRequestResponse(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "tools/call", req, headers)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
 	}
@@ -189,8 +184,8 @@ func (s *Server) CallMethod(ctx context.Context, req *mcp.CallMethodRequest) (*m
 		return nil, status.Errorf(codes.Aborted, "mcp server returned an error: %s", jsonRPCResp.Error.Message)
 	}
 
-	var result mcp.CallMethodResult
-	if err := json.Unmarshal(jsonRPCResp.Result, &result.Result); err != nil {
+	var result mcp.CallToolResult
+	if err := json.Unmarshal(jsonRPCResp.Result, &result); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to unmarshal result from mcp server: %v", err)
 	}
 
@@ -212,10 +207,6 @@ func (s *Server) ListTools(ctx context.Context, req *mcp.ListToolsRequest) (*mcp
 		return nil, status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
 	}
 
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
-	}
-
 	var jsonRPCResp JSONRPCResponse
 	if err := json.Unmarshal([]byte(jsonRpcResponseParts["data"]), &jsonRPCResp); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to unmarshal mcp server response: %v", err)
@@ -225,66 +216,9 @@ func (s *Server) ListTools(ctx context.Context, req *mcp.ListToolsRequest) (*mcp
 		return nil, status.Errorf(codes.Aborted, "mcp server returned an error: %s", jsonRPCResp.Error.Message)
 	}
 
-	var tempResult struct {
-		Tools      []json.RawMessage `json:"tools"`
-		NextCursor string            `json:"next_cursor"`
-	}
-	if err := json.Unmarshal(jsonRPCResp.Result, &tempResult); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal result from mcp server: %v", err)
-	}
-
 	var listToolsResult mcp.ListToolsResult
-	if tempResult.NextCursor != "" {
-		listToolsResult.NextCursor = &tempResult.NextCursor
-	}
-
-	// This struct mirrors the JSON structure from MCP
-	type mcpTool struct {
-		Name         string          `json:"name"`
-		Description  string          `json:"description"`
-		InputSchema  json.RawMessage `json:"inputSchema"`
-		OutputSchema json.RawMessage `json:"outputSchema"`
-		Annotations  json.RawMessage `json:"annotations"`
-		Meta         json.RawMessage `json:"_meta"`
-	}
-
-	for _, rawTool := range tempResult.Tools {
-		var pt mcpTool
-		if err := json.Unmarshal(rawTool, &pt); err != nil {
-			log.Printf("Error unmarshaling tool: %s", string(rawTool))
-			return nil, status.Errorf(codes.Internal, "failed to unmarshal tool into pythonTool: %v", err)
-		}
-
-		// Manually construct the mcp.Tool
-		tool := &mcp.Tool{
-			Metadata: &mcp.BaseMetadata{
-				Name: pt.Name,
-			},
-			Description: &pt.Description,
-		}
-
-		if pt.InputSchema != nil {
-			if err := json.Unmarshal(pt.InputSchema, &tool.InputSchema); err != nil {
-				return nil, status.Errorf(codes.Internal, "failed to unmarshal input_schema: %v", err)
-			}
-		}
-		if pt.OutputSchema != nil {
-			if err := json.Unmarshal(pt.OutputSchema, &tool.OutputSchema); err != nil {
-				return nil, status.Errorf(codes.Internal, "failed to unmarshal output_schema: %v", err)
-			}
-		}
-		if pt.Annotations != nil {
-			if err := json.Unmarshal(pt.Annotations, &tool.Annotations); err != nil {
-				return nil, status.Errorf(codes.Internal, "failed to unmarshal annotations: %v", err)
-			}
-		}
-		if pt.Meta != nil {
-			if err := json.Unmarshal(pt.Meta, &tool.XMeta); err != nil {
-				return nil, status.Errorf(codes.Internal, "failed to unmarshal _meta: %v", err)
-			}
-		}
-
-		listToolsResult.Tools = append(listToolsResult.Tools, tool)
+	if err := json.Unmarshal(jsonRPCResp.Result, &listToolsResult); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to unmarshal result from mcp server: %v", err)
 	}
 
 	return &listToolsResult, nil

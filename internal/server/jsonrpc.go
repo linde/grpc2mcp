@@ -13,6 +13,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 func parseJsonRpcResponseBody(body []byte) (map[string]string, error) {
@@ -48,7 +49,7 @@ func parseJsonRpcResponseBody(body []byte) (map[string]string, error) {
 }
 
 func NewJSONRPCRequest(ctx context.Context, host string, port int, uri string,
-	method string, params any) (*http.Request, error) {
+	method string, params proto.Message) (*http.Request, error) {
 
 	jsonRPCReq := JSONRPCRequest{
 		JSONRPC: "2.0",
@@ -57,7 +58,6 @@ func NewJSONRPCRequest(ctx context.Context, host string, port int, uri string,
 
 	if params != nil {
 		jsonRPCReq.Params = params
-		// TODO is this safe to assume ok to add ID when there are params?
 		jsonRPCReq.ID = rand.Int()
 	}
 
@@ -101,25 +101,9 @@ type JSONRPCError struct {
 }
 
 func getJSONRPCRequestResponse(ctx context.Context,
-	host string, port int, uri string, method string, paramSrc any, headers map[string]string) (map[string]string, error) {
+	host string, port int, uri string, method string, paramSrc proto.Message, headers map[string]string) (map[string]string, error) {
 
-	var params map[string]any
-
-	if paramSrc != nil {
-		// Marshal the protobuf Struct to JSON bytes
-		paramsBytes, err := json.Marshal(paramSrc)
-		if err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to marshal params to json: %v", err)
-		}
-		// Unmarshal the JSON bytes into a map[string]any
-		if err := json.Unmarshal(paramsBytes, &params); err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to unmarshal params to map: %v", err)
-		}
-	} else {
-		params = nil
-	}
-
-	httpReq, err := NewJSONRPCRequest(ctx, host, port, uri, method, params)
+	httpReq, err := NewJSONRPCRequest(ctx, host, port, uri, method, paramSrc)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create http request: %v", err)
 	}

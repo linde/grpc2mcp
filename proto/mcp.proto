@@ -11,36 +11,26 @@ option go_package = "grpc2mcp/pb";
 // ----------------------------------------------------------------
 
 service ModelContextProtocol {
-    // Tools
     rpc Initialize(InitializeRequest) returns (InitializeResult);
-    rpc CallMethod(CallMethodRequest) returns (CallMethodResult);
+    rpc CallMethod(CallToolRequest) returns (CallToolResult);
     rpc ListTools(ListToolsRequest) returns (ListToolsResult);
 }
 
-
 // ----------------------------------------------------------------
-// Initialize Messages
+// Top-level RPC Messages
 // ----------------------------------------------------------------
 
-message InitializeRequest {}
+message InitializeRequest {
+    string protocolVersion = 1;
+    ClientCapabilities capabilities = 2;
+    Implementation clientInfo = 3;
+}
 
 message InitializeResult {
-  optional bool is_error = 3;
-}
-
-
-// ----------------------------------------------------------------
-// Tool Messages
-// ----------------------------------------------------------------
-
-message CallMethodRequest {
-  string method = 1;
-  optional google.protobuf.Struct params = 2;
-  optional google.protobuf.Struct _meta = 3;
-}
-
-message CallMethodResult {
-  google.protobuf.Struct result = 1;
+    string protocolVersion = 1;
+    ServerCapabilities capabilities = 2;
+    Implementation serverInfo = 3;
+    optional string instructions = 4;
 }
 
 message ListToolsRequest {
@@ -50,122 +40,172 @@ message ListToolsRequest {
 
 message ListToolsResult {
     repeated Tool tools = 1;
-    optional string next_cursor = 2;
+    optional string nextCursor = 2;
     optional google.protobuf.Struct _meta = 3;
 }
 
+message CallToolRequest {
+    string name = 1;
+    map<string, google.protobuf.Value> arguments = 2;
+    optional google.protobuf.Struct _meta = 3;
+}
+
+message CallToolResult {
+    repeated ContentBlock content = 1;
+    optional google.protobuf.Struct structuredContent = 2;
+    optional bool isError = 3;
+}
+
+// ----------------------------------------------------------------
+// Core Types from Schema
+// ----------------------------------------------------------------
+
+message ClientCapabilities {
+    map<string, google.protobuf.Struct> experimental = 1;
+    RootsCapability roots = 2;
+    google.protobuf.Struct sampling = 3;
+    google.protobuf.Struct elicitation = 4;
+}
+
+message ServerCapabilities {
+    map<string, google.protobuf.Struct> experimental = 1;
+    google.protobuf.Struct logging = 2;
+    google.protobuf.Struct completions = 3;
+    PromptsCapability prompts = 4;
+    ResourcesCapability resources = 5;
+    ToolsCapability tools = 6;
+}
+
+message RootsCapability {
+    optional bool listChanged = 1;
+}
+
+message PromptsCapability {
+    optional bool listChanged = 1;
+}
+
+message ResourcesCapability {
+    optional bool subscribe = 1;
+    optional bool listChanged = 2;
+}
+
+message ToolsCapability {
+    optional bool listChanged = 1;
+}
+
+message Implementation {
+    string name = 1;
+    optional string title = 2;
+    string version = 3;
+}
+
+message BaseMetadata {
+    string name = 1;
+    optional string title = 2;
+}
+
 message Tool {
-  BaseMetadata metadata = 1;
-  optional string description = 2;
-  google.protobuf.Struct input_schema = 3;
-  optional google.protobuf.Struct output_schema = 4;
-  optional ToolAnnotations annotations = 5;
-  optional google.protobuf.Struct _meta = 6;
+    string name = 1;
+    optional string title = 2;
+    optional string description = 3;
+    JSONSchema inputSchema = 4;
+    optional JSONSchema outputSchema = 5;
+    optional ToolAnnotations annotations = 6;
+    optional google.protobuf.Struct _meta = 7;
+}
+
+message JSONSchema {
+    string type = 1;
+    map<string, JSONSchema> properties = 2;
+    repeated string required = 3;
 }
 
 message ToolAnnotations {
-  optional string title = 1;
-  optional bool read_only_hint = 2;
-  optional bool destructive_hint = 3;
-  optional bool idempotent_hint = 4;
-  optional bool open_world_hint = 5;
+    optional string title = 1;
+    optional bool readOnlyHint = 2;
+    optional bool destructiveHint = 3;
+    optional bool idempotentHint = 4;
+    optional bool openWorldHint = 5;
 }
 
-
-// ----------------------------------------------------------------
-// Content Block and related messages
-// ----------------------------------------------------------------
-
 message ContentBlock {
-  oneof content_type {
-    TextContent text = 1;
-    ImageContent image = 2;
-    AudioContent audio = 3;
-    ResourceLink resource_link = 4;
-    EmbeddedResource embedded_resource = 5;
-  }
+    oneof content_type {
+        TextContent text = 1;
+        ImageContent image = 2;
+        AudioContent audio = 3;
+        ResourceLink resourceLink = 4;
+        EmbeddedResource embeddedResource = 5;
+    }
 }
 
 message TextContent {
-  string text = 1;
-  optional Annotations annotations = 2;
-  optional google.protobuf.Struct _meta = 3;
+    string text = 1;
+    optional Annotations annotations = 2;
+    optional google.protobuf.Struct _meta = 3;
 }
 
 message ImageContent {
-  bytes data = 1;
-  string mime_type = 2;
-  optional Annotations annotations = 3;
-  optional google.protobuf.Struct _meta = 4;
+    bytes data = 1;
+    string mimeType = 2;
+    optional Annotations annotations = 3;
+    optional google.protobuf.Struct _meta = 4;
 }
 
 message AudioContent {
-  bytes data = 1;
-  string mime_type = 2;
-  optional Annotations annotations = 3;
-  optional google.protobuf.Struct _meta = 4;
+    bytes data = 1;
+    string mimeType = 2;
+    optional Annotations annotations = 3;
+    optional google.protobuf.Struct _meta = 4;
 }
 
 message ResourceLink {
-  Resource resource = 1;
+    string type = 1; // Should always be "resource_link"
+    Resource resource = 2;
 }
 
 message EmbeddedResource {
-  oneof resource_contents {
-    TextResourceContents text_resource = 1;
-    BlobResourceContents blob_resource = 2;
-  }
-  optional Annotations annotations = 3;
-  optional google.protobuf.Struct _meta = 4;
+    string type = 1; // Should always be "resource"
+    oneof resource_contents {
+        TextResourceContents textResource = 2;
+        BlobResourceContents blobResource = 3;
+    }
+    optional Annotations annotations = 4;
+    optional google.protobuf.Struct _meta = 5;
 }
 
-
-// ----------------------------------------------------------------
-// Resource and related messages
-// ----------------------------------------------------------------
-
 message Resource {
-  BaseMetadata metadata = 1;
-  string uri = 2;
-  optional string description = 3;
-  optional string mime_type = 4;
-  optional Annotations annotations = 5;
-  optional int64 size = 6;
-  optional google.protobuf.Struct _meta = 7;
+    string name = 1;
+    optional string title = 2;
+    string uri = 3;
+    optional string description = 4;
+    optional string mimeType = 5;
+    optional Annotations annotations = 6;
+    optional int64 size = 7;
+    optional google.protobuf.Struct _meta = 8;
 }
 
 message TextResourceContents {
-  string uri = 1;
-  optional string mime_type = 2;
-  string text = 3;
-  optional google.protobuf.Struct _meta = 4;
+    string uri = 1;
+    optional string mimeType = 2;
+    string text = 3;
+    optional google.protobuf.Struct _meta = 4;
 }
 
 message BlobResourceContents {
-  string uri = 1;
-  optional string mime_type = 2;
-  bytes blob = 3;
-  optional google.protobuf.Struct _meta = 4;
-}
-
-
-// ----------------------------------------------------------------
-// Common messages
-// ----------------------------------------------------------------
-
-message BaseMetadata {
-  string name = 1;
-  optional string title = 2;
+    string uri = 1;
+    optional string mimeType = 2;
+    bytes blob = 3;
+    optional google.protobuf.Struct _meta = 4;
 }
 
 message Annotations {
-  repeated Role audience = 1;
-  optional float priority = 2;
-  optional string last_modified = 3;
+    repeated Role audience = 1;
+    optional float priority = 2;
+    optional string lastModified = 3;
 }
 
 enum Role {
-  ROLE_UNSPECIFIED = 0;
-  USER = 1;
-  ASSISTANT = 2;
+    ROLE_UNSPECIFIED = 0;
+    USER = 1;
+    ASSISTANT = 2;
 }

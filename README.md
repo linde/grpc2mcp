@@ -2,7 +2,7 @@
 
 This project implements a proxy server that translates gRPC requests into JSON-RPC requests for a server that conforms to the Model Context Protocol (MCP). This allows gRPC-based clients to communicate with MCP-compatible servers seamlessly.
 
-The proxy handles the gRPC service defined in `proto/mcp.proto` and forwards the requests to a configured MCP endpoint.
+The proxy handles the gRPC service defined in `proto/mcp.proto` and forwards the requests to a configured MCP endpoint. The protos there were derived from the current MCP specification, ie the [2025-06-18/schema.ts](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/schema/2025-06-18/schema.ts).
 
 ## Running the Example MCP Server
 
@@ -55,19 +55,19 @@ arguments after first initiailizing an MCP session:
  grpcurl -v -plaintext   localhost:8080  mcp.ModelContextProtocol/Initialize
 
 # try it again with grep to capture the value of the "mcp-session-id" header line
-MCP_SESSION_HEADER=$(grpcurl -v -plaintext   localhost:8080    mcp.ModelContextProtocol/Initialize | grep mcp-session-id)
+MCP_SESSION_HEADER=$(grpcurl -v -plaintext   localhost:8080  mcp.ModelContextProtocol/Initialize | grep mcp-session-id)
 
 # now use that header with the session id to make any other calls
 grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
-    -d '{"method": "tools/call", "params": {"name": "add", "arguments": {"a": 20, "b": 1}}}' \
+    -d '{"name": "add", "arguments": {"a": 20, "b": 1}}' \
     localhost:8080    mcp.ModelContextProtocol/CallMethod
 
 grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
-    -d '{"method": "tools/call", "params": {"name": "mult", "arguments": {"a": 20, "b": 1}}}' \
+    -d '{"name": "mult", "arguments": {"a": 20, "b": 1}}' \
     localhost:8080    mcp.ModelContextProtocol/CallMethod
 
 grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
-    -d '{"method": "tools/call", "params": {"name": "lower", "arguments": {"s": "thisIsMixedCase"}}}' \
+    -d '{"name": "lower", "arguments": {"s": "thisIsMixedCase"}}' \
     localhost:8080 mcp.ModelContextProtocol/CallMethod
 
 

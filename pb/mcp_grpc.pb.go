@@ -28,9 +28,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ModelContextProtocolClient interface {
-	// Tools
 	Initialize(ctx context.Context, in *InitializeRequest, opts ...grpc.CallOption) (*InitializeResult, error)
-	CallMethod(ctx context.Context, in *CallMethodRequest, opts ...grpc.CallOption) (*CallMethodResult, error)
+	CallMethod(ctx context.Context, in *CallToolRequest, opts ...grpc.CallOption) (*CallToolResult, error)
 	ListTools(ctx context.Context, in *ListToolsRequest, opts ...grpc.CallOption) (*ListToolsResult, error)
 }
 
@@ -52,9 +51,9 @@ func (c *modelContextProtocolClient) Initialize(ctx context.Context, in *Initial
 	return out, nil
 }
 
-func (c *modelContextProtocolClient) CallMethod(ctx context.Context, in *CallMethodRequest, opts ...grpc.CallOption) (*CallMethodResult, error) {
+func (c *modelContextProtocolClient) CallMethod(ctx context.Context, in *CallToolRequest, opts ...grpc.CallOption) (*CallToolResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CallMethodResult)
+	out := new(CallToolResult)
 	err := c.cc.Invoke(ctx, ModelContextProtocol_CallMethod_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -76,9 +75,8 @@ func (c *modelContextProtocolClient) ListTools(ctx context.Context, in *ListTool
 // All implementations should embed UnimplementedModelContextProtocolServer
 // for forward compatibility.
 type ModelContextProtocolServer interface {
-	// Tools
 	Initialize(context.Context, *InitializeRequest) (*InitializeResult, error)
-	CallMethod(context.Context, *CallMethodRequest) (*CallMethodResult, error)
+	CallMethod(context.Context, *CallToolRequest) (*CallToolResult, error)
 	ListTools(context.Context, *ListToolsRequest) (*ListToolsResult, error)
 }
 
@@ -92,7 +90,7 @@ type UnimplementedModelContextProtocolServer struct{}
 func (UnimplementedModelContextProtocolServer) Initialize(context.Context, *InitializeRequest) (*InitializeResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Initialize not implemented")
 }
-func (UnimplementedModelContextProtocolServer) CallMethod(context.Context, *CallMethodRequest) (*CallMethodResult, error) {
+func (UnimplementedModelContextProtocolServer) CallMethod(context.Context, *CallToolRequest) (*CallToolResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CallMethod not implemented")
 }
 func (UnimplementedModelContextProtocolServer) ListTools(context.Context, *ListToolsRequest) (*ListToolsResult, error) {
@@ -137,7 +135,7 @@ func _ModelContextProtocol_Initialize_Handler(srv interface{}, ctx context.Conte
 }
 
 func _ModelContextProtocol_CallMethod_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CallMethodRequest)
+	in := new(CallToolRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -149,7 +147,7 @@ func _ModelContextProtocol_CallMethod_Handler(srv interface{}, ctx context.Conte
 		FullMethod: ModelContextProtocol_CallMethod_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModelContextProtocolServer).CallMethod(ctx, req.(*CallMethodRequest))
+		return srv.(ModelContextProtocolServer).CallMethod(ctx, req.(*CallToolRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
