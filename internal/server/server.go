@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 var MCP_SESSION_ID_HEADER = http.CanonicalHeaderKey("mcp-session-id")
@@ -164,62 +165,49 @@ func (s *Server) Start(port int) error {
 func (s *Server) CallMethod(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	log.Printf("CallMethod requested for method '%s': %v", req.Name, req)
 
-	sessionID, ok := ctx.Value(MCP_SESSION_ID_HEADER).(string)
-	if !ok {
-		return nil, status.Errorf(codes.Internal, "could not get session id (%s) from context", MCP_SESSION_ID_HEADER)
-	}
-
-	headers := map[string]string{MCP_SESSION_ID_HEADER: sessionID}
-	jsonRpcResponseParts, err := getJSONRPCRequestResponse(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "tools/call", req, headers)
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
-	}
-
-	var jsonRPCResp JSONRPCResponse
-	if err := json.Unmarshal([]byte(jsonRpcResponseParts["data"]), &jsonRPCResp); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal mcp server response: %v", err)
-	}
-
-	if jsonRPCResp.Error != nil {
-		return nil, status.Errorf(codes.Aborted, "mcp server returned an error: %s", jsonRPCResp.Error.Message)
-	}
-
 	var result mcp.CallToolResult
-	if err := json.Unmarshal(jsonRPCResp.Result, &result); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal result from mcp server: %v", err)
-	}
+	err := s.doRpcCall(ctx, req, "tools/call", &result)
 
-	return &result, nil
+	return &result, err
 }
 
 // ListTools implements the ListTools RPC.
 func (s *Server) ListTools(ctx context.Context, req *mcp.ListToolsRequest) (*mcp.ListToolsResult, error) {
 	log.Printf("ListTools requested: %v", req)
 
+	var listToolsResult mcp.ListToolsResult
+
+	err := s.doRpcCall(ctx, req, "tools/list", &listToolsResult)
+	return &listToolsResult, err
+
+}
+
+// This is the heart of doing a session jsonrpc call and unpacking, then deserializing the result.
+func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage, method string, rpcResultPtr any) error {
+
 	sessionID, ok := ctx.Value(MCP_SESSION_ID_HEADER).(string)
 	if !ok {
-		return nil, status.Errorf(codes.Internal, "could not get session id (%s) from context", MCP_SESSION_ID_HEADER)
+		return status.Errorf(codes.Internal, "could not get session id (%s) from context", MCP_SESSION_ID_HEADER)
 	}
 
 	headers := map[string]string{MCP_SESSION_ID_HEADER: sessionID}
-	jsonRpcResponseParts, err := getJSONRPCRequestResponse(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "tools/list", req, headers)
+	jsonRpcResponseParts, err := getJSONRPCRequestResponse(ctx, s.mcpHost, s.mcpPort, s.mcpUri, method, req, headers)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
+		status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
 	}
 
 	var jsonRPCResp JSONRPCResponse
 	if err := json.Unmarshal([]byte(jsonRpcResponseParts["data"]), &jsonRPCResp); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal mcp server response: %v", err)
+		status.Errorf(codes.Internal, "failed to unmarshal mcp server response: %v", err)
 	}
 
 	if jsonRPCResp.Error != nil {
-		return nil, status.Errorf(codes.Aborted, "mcp server returned an error: %s", jsonRPCResp.Error.Message)
+		status.Errorf(codes.Aborted, "mcp server returned an error: %s", jsonRPCResp.Error.Message)
 	}
 
-	var listToolsResult mcp.ListToolsResult
-	if err := json.Unmarshal(jsonRPCResp.Result, &listToolsResult); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal result from mcp server: %v", err)
+	if err := json.Unmarshal(jsonRPCResp.Result, rpcResultPtr); err != nil {
+		return status.Errorf(codes.Internal, "failed to unmarshal result from mcp server: %v", err)
 	}
 
-	return &listToolsResult, nil
+	return nil
 }
