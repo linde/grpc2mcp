@@ -19,10 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ModelContextProtocol_Initialize_FullMethodName    = "/mcp.ModelContextProtocol/Initialize"
-	ModelContextProtocol_CallTool_FullMethodName      = "/mcp.ModelContextProtocol/CallTool"
-	ModelContextProtocol_ListTools_FullMethodName     = "/mcp.ModelContextProtocol/ListTools"
-	ModelContextProtocol_WatchToolList_FullMethodName = "/mcp.ModelContextProtocol/WatchToolList"
+	ModelContextProtocol_Initialize_FullMethodName = "/mcp.ModelContextProtocol/Initialize"
+	ModelContextProtocol_CallMethod_FullMethodName = "/mcp.ModelContextProtocol/CallMethod"
+	ModelContextProtocol_ListTools_FullMethodName  = "/mcp.ModelContextProtocol/ListTools"
 )
 
 // ModelContextProtocolClient is the client API for ModelContextProtocol service.
@@ -31,9 +30,8 @@ const (
 type ModelContextProtocolClient interface {
 	// Tools
 	Initialize(ctx context.Context, in *InitializeRequest, opts ...grpc.CallOption) (*InitializeResult, error)
-	CallTool(ctx context.Context, in *CallToolRequest, opts ...grpc.CallOption) (*CallToolResult, error)
+	CallMethod(ctx context.Context, in *CallMethodRequest, opts ...grpc.CallOption) (*CallMethodResult, error)
 	ListTools(ctx context.Context, in *ListToolsRequest, opts ...grpc.CallOption) (*ListToolsResult, error)
-	WatchToolList(ctx context.Context, in *WatchToolListRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ToolListChangedNotification], error)
 }
 
 type modelContextProtocolClient struct {
@@ -54,10 +52,10 @@ func (c *modelContextProtocolClient) Initialize(ctx context.Context, in *Initial
 	return out, nil
 }
 
-func (c *modelContextProtocolClient) CallTool(ctx context.Context, in *CallToolRequest, opts ...grpc.CallOption) (*CallToolResult, error) {
+func (c *modelContextProtocolClient) CallMethod(ctx context.Context, in *CallMethodRequest, opts ...grpc.CallOption) (*CallMethodResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CallToolResult)
-	err := c.cc.Invoke(ctx, ModelContextProtocol_CallTool_FullMethodName, in, out, cOpts...)
+	out := new(CallMethodResult)
+	err := c.cc.Invoke(ctx, ModelContextProtocol_CallMethod_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,34 +72,14 @@ func (c *modelContextProtocolClient) ListTools(ctx context.Context, in *ListTool
 	return out, nil
 }
 
-func (c *modelContextProtocolClient) WatchToolList(ctx context.Context, in *WatchToolListRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ToolListChangedNotification], error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &ModelContextProtocol_ServiceDesc.Streams[0], ModelContextProtocol_WatchToolList_FullMethodName, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &grpc.GenericClientStream[WatchToolListRequest, ToolListChangedNotification]{ClientStream: stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type ModelContextProtocol_WatchToolListClient = grpc.ServerStreamingClient[ToolListChangedNotification]
-
 // ModelContextProtocolServer is the server API for ModelContextProtocol service.
 // All implementations should embed UnimplementedModelContextProtocolServer
 // for forward compatibility.
 type ModelContextProtocolServer interface {
 	// Tools
 	Initialize(context.Context, *InitializeRequest) (*InitializeResult, error)
-	CallTool(context.Context, *CallToolRequest) (*CallToolResult, error)
+	CallMethod(context.Context, *CallMethodRequest) (*CallMethodResult, error)
 	ListTools(context.Context, *ListToolsRequest) (*ListToolsResult, error)
-	WatchToolList(*WatchToolListRequest, grpc.ServerStreamingServer[ToolListChangedNotification]) error
 }
 
 // UnimplementedModelContextProtocolServer should be embedded to have
@@ -114,14 +92,11 @@ type UnimplementedModelContextProtocolServer struct{}
 func (UnimplementedModelContextProtocolServer) Initialize(context.Context, *InitializeRequest) (*InitializeResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Initialize not implemented")
 }
-func (UnimplementedModelContextProtocolServer) CallTool(context.Context, *CallToolRequest) (*CallToolResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CallTool not implemented")
+func (UnimplementedModelContextProtocolServer) CallMethod(context.Context, *CallMethodRequest) (*CallMethodResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CallMethod not implemented")
 }
 func (UnimplementedModelContextProtocolServer) ListTools(context.Context, *ListToolsRequest) (*ListToolsResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTools not implemented")
-}
-func (UnimplementedModelContextProtocolServer) WatchToolList(*WatchToolListRequest, grpc.ServerStreamingServer[ToolListChangedNotification]) error {
-	return status.Errorf(codes.Unimplemented, "method WatchToolList not implemented")
 }
 func (UnimplementedModelContextProtocolServer) testEmbeddedByValue() {}
 
@@ -161,20 +136,20 @@ func _ModelContextProtocol_Initialize_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModelContextProtocol_CallTool_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CallToolRequest)
+func _ModelContextProtocol_CallMethod_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CallMethodRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModelContextProtocolServer).CallTool(ctx, in)
+		return srv.(ModelContextProtocolServer).CallMethod(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ModelContextProtocol_CallTool_FullMethodName,
+		FullMethod: ModelContextProtocol_CallMethod_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModelContextProtocolServer).CallTool(ctx, req.(*CallToolRequest))
+		return srv.(ModelContextProtocolServer).CallMethod(ctx, req.(*CallMethodRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -197,17 +172,6 @@ func _ModelContextProtocol_ListTools_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModelContextProtocol_WatchToolList_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(WatchToolListRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(ModelContextProtocolServer).WatchToolList(m, &grpc.GenericServerStream[WatchToolListRequest, ToolListChangedNotification]{ServerStream: stream})
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type ModelContextProtocol_WatchToolListServer = grpc.ServerStreamingServer[ToolListChangedNotification]
-
 // ModelContextProtocol_ServiceDesc is the grpc.ServiceDesc for ModelContextProtocol service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -220,20 +184,14 @@ var ModelContextProtocol_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ModelContextProtocol_Initialize_Handler,
 		},
 		{
-			MethodName: "CallTool",
-			Handler:    _ModelContextProtocol_CallTool_Handler,
+			MethodName: "CallMethod",
+			Handler:    _ModelContextProtocol_CallMethod_Handler,
 		},
 		{
 			MethodName: "ListTools",
 			Handler:    _ModelContextProtocol_ListTools_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "WatchToolList",
-			Handler:       _ModelContextProtocol_WatchToolList_Handler,
-			ServerStreams: true,
-		},
-	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "mcp.proto",
 }

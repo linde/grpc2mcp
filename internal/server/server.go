@@ -165,9 +165,9 @@ func (s *Server) Start(port int) error {
 	return grpcServer.Serve(lis)
 }
 
-// CallTool implements the CallTool RPC.
-func (s *Server) CallTool(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	log.Printf("CallTool requested: %v", req)
+// CallMethod implements the CallMethod RPC.
+func (s *Server) CallMethod(ctx context.Context, req *mcp.CallMethodRequest) (*mcp.CallMethodResult, error) {
+	log.Printf("CallMethod requested for method '%s': %v", req.Method, req)
 
 	sessionID, ok := ctx.Value(MCP_SESSION_ID_HEADER).(string)
 	if !ok {
@@ -175,15 +175,17 @@ func (s *Server) CallTool(ctx context.Context, req *mcp.CallToolRequest) (*mcp.C
 	}
 
 	var params map[string]any
-	paramsBytes, err := json.Marshal(req)
+	// Marshal the protobuf Struct to JSON bytes
+	paramsBytes, err := json.Marshal(req.Params)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to marshal request to json: %v", err)
+		return nil, status.Errorf(codes.Internal, "failed to marshal params to json: %v", err)
 	}
+	// Unmarshal the JSON bytes into a map[string]any
 	if err := json.Unmarshal(paramsBytes, &params); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to unmarshal params to map: %v", err)
 	}
 
-	httpReq, err := NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "tools/call", params)
+	httpReq, err := NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, req.Method, params)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create http request: %v", err)
 	}
@@ -218,46 +220,12 @@ func (s *Server) CallTool(ctx context.Context, req *mcp.CallToolRequest) (*mcp.C
 		return nil, status.Errorf(codes.Aborted, "mcp server returned an error: %s", jsonRPCResp.Error.Message)
 	}
 
-	var tempResult struct {
-		Content           []json.RawMessage `json:"content"`
-		StructuredContent json.RawMessage   `json:"structuredContent"`
-		IsError           bool              `json:"isError"`
-	}
-
-	if err := json.Unmarshal(jsonRPCResp.Result, &tempResult); err != nil {
+	var result mcp.CallMethodResult
+	if err := json.Unmarshal(jsonRPCResp.Result, &result.Result); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to unmarshal result from mcp server: %v", err)
 	}
 
-	var callToolResult mcp.CallToolResult
-	callToolResult.IsError = &tempResult.IsError
-	if err := json.Unmarshal(tempResult.StructuredContent, &callToolResult.StructuredContent); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal structuredContent: %v", err)
-	}
-
-	for _, rawContent := range tempResult.Content {
-		var contentType struct {
-			Type string `json:"type"`
-		}
-		if err := json.Unmarshal(rawContent, &contentType); err != nil {
-			return nil, status.Errorf(codes.Internal, "failed to unmarshal content type: %v", err)
-		}
-
-		var contentBlock mcp.ContentBlock
-		switch contentType.Type {
-		case "text":
-			var textContent mcp.TextContent
-			if err := json.Unmarshal(rawContent, &textContent); err != nil {
-				return nil, status.Errorf(codes.Internal, "failed to unmarshal text content: %v", err)
-			}
-			contentBlock.ContentType = &mcp.ContentBlock_Text{Text: &textContent}
-		// TODO: Add cases for other content types as needed
-		default:
-			return nil, status.Errorf(codes.Internal, "unknown content type: %s", contentType.Type)
-		}
-		callToolResult.Content = append(callToolResult.Content, &contentBlock)
-	}
-
-	return &callToolResult, nil
+	return &result, nil
 }
 
 // ListTools implements the ListTools RPC.

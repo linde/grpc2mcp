@@ -60,20 +60,14 @@ MCP_SESSION_HEADER=$(grpcurl -v -plaintext   localhost:8080    mcp.ModelContextP
 
 # now use that header with the session id to make any other calls
 grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
-    -d '{"name": "add", "arguments": {"a": 20, "b": 1}}' \
-    localhost:8080    mcp.ModelContextProtocol/CallTool
+    -d '{"method": "tools/call", "params": {"name": "add", "arguments": {"a": 20, "b": 1}}}' \
+    localhost:8080    mcp.ModelContextProtocol/CallMethod
 
 grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
-    -d '{"name": "mult", "arguments": {"a": 20, "b": 1}}' \
-    localhost:8080    mcp.ModelContextProtocol/CallTool 
+    -d '{"method": "tools/call", "params": {"name": "mult", "arguments": {"a": 20, "b": 1}}}' \
+    localhost:8080    mcp.ModelContextProtocol/CallMethod
 
 grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
-    -d '{"name": "lower", "arguments": {"s": "thisIsMixedCase"}}' \
-    localhost:8080 mcp.ModelContextProtocol/CallTool
-```
+    -d '{"method": "tools/call", "params": {"name": "lower", "arguments": {"s": "thisIsMixedCase"}}}' \
+    localhost:8080 mcp.ModelContextProtocol/CallMethod
 
-This example lists the tools available from the MCP server.
-
-```bash
-grpcurl -H "${MCP_SESSION_HEADER}" -plaintext localhost:8080 mcp.ModelContextProtocol/ListTools
-```

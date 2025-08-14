@@ -13,9 +13,8 @@ option go_package = "grpc2mcp/pb";
 service ModelContextProtocol {
     // Tools
     rpc Initialize(InitializeRequest) returns (InitializeResult);
-    rpc CallTool(CallToolRequest) returns (CallToolResult);
+    rpc CallMethod(CallMethodRequest) returns (CallMethodResult);
     rpc ListTools(ListToolsRequest) returns (ListToolsResult);
-    rpc WatchToolList(WatchToolListRequest) returns (stream ToolListChangedNotification);
 }
 
 
@@ -34,17 +33,14 @@ message InitializeResult {
 // Tool Messages
 // ----------------------------------------------------------------
 
-message CallToolRequest {
-  string name = 1;
-  optional google.protobuf.Struct arguments = 2;
+message CallMethodRequest {
+  string method = 1;
+  optional google.protobuf.Struct params = 2;
   optional google.protobuf.Struct _meta = 3;
 }
 
-message CallToolResult {
-  repeated ContentBlock content = 1;
-  optional google.protobuf.Struct structured_content = 2;
-  optional bool is_error = 3;
-  optional google.protobuf.Struct _meta = 4;
+message CallMethodResult {
+  google.protobuf.Struct result = 1;
 }
 
 message ListToolsRequest {
@@ -57,10 +53,6 @@ message ListToolsResult {
     optional string next_cursor = 2;
     optional google.protobuf.Struct _meta = 3;
 }
-
-message WatchToolListRequest {}
-
-message ToolListChangedNotification {}
 
 message Tool {
   BaseMetadata metadata = 1;
