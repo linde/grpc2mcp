@@ -191,6 +191,15 @@ func (s *Server) Complete(ctx context.Context, req *mcp.CompleteRequest) (*mcp.C
 	return &result, err
 }
 
+func (s *Server) Ping(ctx context.Context, req *mcp.PingRequest) (*mcp.PingResult, error) {
+	log.Printf("Ping requested: %v", req)
+
+	var result mcp.PingResult
+	err := s.doRpcCall(ctx, req, "ping", &result)
+
+	return &result, err
+}
+
 // This is the heart of doing a session jsonrpc call and unpacking, then deserializing the result.
 func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage, method string, rpcResultPtr any) error {
 

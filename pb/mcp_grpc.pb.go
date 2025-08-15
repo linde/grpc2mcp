@@ -23,6 +23,7 @@ const (
 	ModelContextProtocol_CallMethod_FullMethodName = "/mcp.ModelContextProtocol/CallMethod"
 	ModelContextProtocol_ListTools_FullMethodName  = "/mcp.ModelContextProtocol/ListTools"
 	ModelContextProtocol_Complete_FullMethodName   = "/mcp.ModelContextProtocol/Complete"
+	ModelContextProtocol_Ping_FullMethodName       = "/mcp.ModelContextProtocol/Ping"
 )
 
 // ModelContextProtocolClient is the client API for ModelContextProtocol service.
@@ -33,6 +34,7 @@ type ModelContextProtocolClient interface {
 	CallMethod(ctx context.Context, in *CallToolRequest, opts ...grpc.CallOption) (*CallToolResult, error)
 	ListTools(ctx context.Context, in *ListToolsRequest, opts ...grpc.CallOption) (*ListToolsResult, error)
 	Complete(ctx context.Context, in *CompleteRequest, opts ...grpc.CallOption) (*CompleteResult, error)
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResult, error)
 }
 
 type modelContextProtocolClient struct {
@@ -83,6 +85,16 @@ func (c *modelContextProtocolClient) Complete(ctx context.Context, in *CompleteR
 	return out, nil
 }
 
+func (c *modelContextProtocolClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PingResult)
+	err := c.cc.Invoke(ctx, ModelContextProtocol_Ping_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ModelContextProtocolServer is the server API for ModelContextProtocol service.
 // All implementations should embed UnimplementedModelContextProtocolServer
 // for forward compatibility.
@@ -91,6 +103,7 @@ type ModelContextProtocolServer interface {
 	CallMethod(context.Context, *CallToolRequest) (*CallToolResult, error)
 	ListTools(context.Context, *ListToolsRequest) (*ListToolsResult, error)
 	Complete(context.Context, *CompleteRequest) (*CompleteResult, error)
+	Ping(context.Context, *PingRequest) (*PingResult, error)
 }
 
 // UnimplementedModelContextProtocolServer should be embedded to have
@@ -111,6 +124,9 @@ func (UnimplementedModelContextProtocolServer) ListTools(context.Context, *ListT
 }
 func (UnimplementedModelContextProtocolServer) Complete(context.Context, *CompleteRequest) (*CompleteResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Complete not implemented")
+}
+func (UnimplementedModelContextProtocolServer) Ping(context.Context, *PingRequest) (*PingResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedModelContextProtocolServer) testEmbeddedByValue() {}
 
@@ -204,6 +220,24 @@ func _ModelContextProtocol_Complete_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ModelContextProtocol_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelContextProtocolServer).Ping(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModelContextProtocol_Ping_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelContextProtocolServer).Ping(ctx, req.(*PingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ModelContextProtocol_ServiceDesc is the grpc.ServiceDesc for ModelContextProtocol service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -226,6 +260,10 @@ var ModelContextProtocol_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Complete",
 			Handler:    _ModelContextProtocol_Complete_Handler,
+		},
+		{
+			MethodName: "Ping",
+			Handler:    _ModelContextProtocol_Ping_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

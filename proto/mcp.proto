@@ -15,6 +15,7 @@ service ModelContextProtocol {
     rpc CallMethod(CallToolRequest) returns (CallToolResult);
     rpc ListTools(ListToolsRequest) returns (ListToolsResult);
     rpc Complete(CompleteRequest) returns (CompleteResult);
+    rpc Ping(PingRequest) returns (PingResult);
 }
 
 // ----------------------------------------------------------------
@@ -66,6 +67,10 @@ message CompleteRequest {
 message CompleteResult {
     Completion completion = 1;
 }
+
+message PingRequest {}
+
+message PingResult {}
 
 // ----------------------------------------------------------------
 // Core Types from Schema
@@ -215,9 +220,21 @@ message Annotations {
     optional string lastModified = 3;
 }
 
+message Reference {
+    oneof ref_oneof {
+        PromptReference prompt = 1;
+        ResourceTemplateReference resourceTemplate = 2;
+    }
+}
+
 message PromptReference {
     string type = 1;
     string name = 2;
+}
+
+message ResourceTemplateReference {
+    string type = 1;
+    string uri = 2;
 }
 
 message CompletionArgument {
