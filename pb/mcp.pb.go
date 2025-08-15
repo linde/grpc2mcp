@@ -431,6 +431,110 @@ func (x *CallToolResult) GetIsError() bool {
 	return false
 }
 
+type CompleteRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ref           *PromptReference       `protobuf:"bytes,1,opt,name=ref,proto3" json:"ref,omitempty"`
+	Argument      *CompletionArgument    `protobuf:"bytes,2,opt,name=argument,proto3" json:"argument,omitempty"`
+	Context       *CompletionContext     `protobuf:"bytes,3,opt,name=context,proto3" json:"context,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CompleteRequest) Reset() {
+	*x = CompleteRequest{}
+	mi := &file_mcp_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CompleteRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CompleteRequest) ProtoMessage() {}
+
+func (x *CompleteRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mcp_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CompleteRequest.ProtoReflect.Descriptor instead.
+func (*CompleteRequest) Descriptor() ([]byte, []int) {
+	return file_mcp_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *CompleteRequest) GetRef() *PromptReference {
+	if x != nil {
+		return x.Ref
+	}
+	return nil
+}
+
+func (x *CompleteRequest) GetArgument() *CompletionArgument {
+	if x != nil {
+		return x.Argument
+	}
+	return nil
+}
+
+func (x *CompleteRequest) GetContext() *CompletionContext {
+	if x != nil {
+		return x.Context
+	}
+	return nil
+}
+
+type CompleteResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Completion    *Completion            `protobuf:"bytes,1,opt,name=completion,proto3" json:"completion,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CompleteResult) Reset() {
+	*x = CompleteResult{}
+	mi := &file_mcp_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CompleteResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CompleteResult) ProtoMessage() {}
+
+func (x *CompleteResult) ProtoReflect() protoreflect.Message {
+	mi := &file_mcp_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CompleteResult.ProtoReflect.Descriptor instead.
+func (*CompleteResult) Descriptor() ([]byte, []int) {
+	return file_mcp_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *CompleteResult) GetCompletion() *Completion {
+	if x != nil {
+		return x.Completion
+	}
+	return nil
+}
+
 type ClientCapabilities struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
 	Experimental  map[string]*structpb.Struct `protobuf:"bytes,1,rep,name=experimental,proto3" json:"experimental,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
@@ -443,7 +547,7 @@ type ClientCapabilities struct {
 
 func (x *ClientCapabilities) Reset() {
 	*x = ClientCapabilities{}
-	mi := &file_mcp_proto_msgTypes[6]
+	mi := &file_mcp_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -455,7 +559,7 @@ func (x *ClientCapabilities) String() string {
 func (*ClientCapabilities) ProtoMessage() {}
 
 func (x *ClientCapabilities) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[6]
+	mi := &file_mcp_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -468,7 +572,7 @@ func (x *ClientCapabilities) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClientCapabilities.ProtoReflect.Descriptor instead.
 func (*ClientCapabilities) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{6}
+	return file_mcp_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ClientCapabilities) GetExperimental() map[string]*structpb.Struct {
@@ -513,7 +617,7 @@ type ServerCapabilities struct {
 
 func (x *ServerCapabilities) Reset() {
 	*x = ServerCapabilities{}
-	mi := &file_mcp_proto_msgTypes[7]
+	mi := &file_mcp_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -525,7 +629,7 @@ func (x *ServerCapabilities) String() string {
 func (*ServerCapabilities) ProtoMessage() {}
 
 func (x *ServerCapabilities) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[7]
+	mi := &file_mcp_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -538,7 +642,7 @@ func (x *ServerCapabilities) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerCapabilities.ProtoReflect.Descriptor instead.
 func (*ServerCapabilities) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{7}
+	return file_mcp_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ServerCapabilities) GetExperimental() map[string]*structpb.Struct {
@@ -592,7 +696,7 @@ type RootsCapability struct {
 
 func (x *RootsCapability) Reset() {
 	*x = RootsCapability{}
-	mi := &file_mcp_proto_msgTypes[8]
+	mi := &file_mcp_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -604,7 +708,7 @@ func (x *RootsCapability) String() string {
 func (*RootsCapability) ProtoMessage() {}
 
 func (x *RootsCapability) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[8]
+	mi := &file_mcp_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -617,7 +721,7 @@ func (x *RootsCapability) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RootsCapability.ProtoReflect.Descriptor instead.
 func (*RootsCapability) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{8}
+	return file_mcp_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RootsCapability) GetListChanged() bool {
@@ -636,7 +740,7 @@ type PromptsCapability struct {
 
 func (x *PromptsCapability) Reset() {
 	*x = PromptsCapability{}
-	mi := &file_mcp_proto_msgTypes[9]
+	mi := &file_mcp_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -648,7 +752,7 @@ func (x *PromptsCapability) String() string {
 func (*PromptsCapability) ProtoMessage() {}
 
 func (x *PromptsCapability) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[9]
+	mi := &file_mcp_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -661,7 +765,7 @@ func (x *PromptsCapability) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PromptsCapability.ProtoReflect.Descriptor instead.
 func (*PromptsCapability) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{9}
+	return file_mcp_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *PromptsCapability) GetListChanged() bool {
@@ -681,7 +785,7 @@ type ResourcesCapability struct {
 
 func (x *ResourcesCapability) Reset() {
 	*x = ResourcesCapability{}
-	mi := &file_mcp_proto_msgTypes[10]
+	mi := &file_mcp_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -693,7 +797,7 @@ func (x *ResourcesCapability) String() string {
 func (*ResourcesCapability) ProtoMessage() {}
 
 func (x *ResourcesCapability) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[10]
+	mi := &file_mcp_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -706,7 +810,7 @@ func (x *ResourcesCapability) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourcesCapability.ProtoReflect.Descriptor instead.
 func (*ResourcesCapability) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{10}
+	return file_mcp_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ResourcesCapability) GetSubscribe() bool {
@@ -732,7 +836,7 @@ type ToolsCapability struct {
 
 func (x *ToolsCapability) Reset() {
 	*x = ToolsCapability{}
-	mi := &file_mcp_proto_msgTypes[11]
+	mi := &file_mcp_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -744,7 +848,7 @@ func (x *ToolsCapability) String() string {
 func (*ToolsCapability) ProtoMessage() {}
 
 func (x *ToolsCapability) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[11]
+	mi := &file_mcp_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -757,7 +861,7 @@ func (x *ToolsCapability) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolsCapability.ProtoReflect.Descriptor instead.
 func (*ToolsCapability) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{11}
+	return file_mcp_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ToolsCapability) GetListChanged() bool {
@@ -778,7 +882,7 @@ type Implementation struct {
 
 func (x *Implementation) Reset() {
 	*x = Implementation{}
-	mi := &file_mcp_proto_msgTypes[12]
+	mi := &file_mcp_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -790,7 +894,7 @@ func (x *Implementation) String() string {
 func (*Implementation) ProtoMessage() {}
 
 func (x *Implementation) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[12]
+	mi := &file_mcp_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -803,7 +907,7 @@ func (x *Implementation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Implementation.ProtoReflect.Descriptor instead.
 func (*Implementation) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{12}
+	return file_mcp_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *Implementation) GetName() string {
@@ -837,7 +941,7 @@ type BaseMetadata struct {
 
 func (x *BaseMetadata) Reset() {
 	*x = BaseMetadata{}
-	mi := &file_mcp_proto_msgTypes[13]
+	mi := &file_mcp_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -849,7 +953,7 @@ func (x *BaseMetadata) String() string {
 func (*BaseMetadata) ProtoMessage() {}
 
 func (x *BaseMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[13]
+	mi := &file_mcp_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -862,7 +966,7 @@ func (x *BaseMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BaseMetadata.ProtoReflect.Descriptor instead.
 func (*BaseMetadata) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{13}
+	return file_mcp_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *BaseMetadata) GetName() string {
@@ -894,7 +998,7 @@ type Tool struct {
 
 func (x *Tool) Reset() {
 	*x = Tool{}
-	mi := &file_mcp_proto_msgTypes[14]
+	mi := &file_mcp_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -906,7 +1010,7 @@ func (x *Tool) String() string {
 func (*Tool) ProtoMessage() {}
 
 func (x *Tool) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[14]
+	mi := &file_mcp_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -919,7 +1023,7 @@ func (x *Tool) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Tool.ProtoReflect.Descriptor instead.
 func (*Tool) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{14}
+	return file_mcp_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Tool) GetName() string {
@@ -982,7 +1086,7 @@ type JSONSchema struct {
 
 func (x *JSONSchema) Reset() {
 	*x = JSONSchema{}
-	mi := &file_mcp_proto_msgTypes[15]
+	mi := &file_mcp_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -994,7 +1098,7 @@ func (x *JSONSchema) String() string {
 func (*JSONSchema) ProtoMessage() {}
 
 func (x *JSONSchema) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[15]
+	mi := &file_mcp_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1007,7 +1111,7 @@ func (x *JSONSchema) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use JSONSchema.ProtoReflect.Descriptor instead.
 func (*JSONSchema) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{15}
+	return file_mcp_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *JSONSchema) GetType() string {
@@ -1044,7 +1148,7 @@ type ToolAnnotations struct {
 
 func (x *ToolAnnotations) Reset() {
 	*x = ToolAnnotations{}
-	mi := &file_mcp_proto_msgTypes[16]
+	mi := &file_mcp_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1056,7 +1160,7 @@ func (x *ToolAnnotations) String() string {
 func (*ToolAnnotations) ProtoMessage() {}
 
 func (x *ToolAnnotations) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[16]
+	mi := &file_mcp_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1069,7 +1173,7 @@ func (x *ToolAnnotations) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ToolAnnotations.ProtoReflect.Descriptor instead.
 func (*ToolAnnotations) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{16}
+	return file_mcp_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ToolAnnotations) GetTitle() string {
@@ -1123,7 +1227,7 @@ type ContentBlock struct {
 
 func (x *ContentBlock) Reset() {
 	*x = ContentBlock{}
-	mi := &file_mcp_proto_msgTypes[17]
+	mi := &file_mcp_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1135,7 +1239,7 @@ func (x *ContentBlock) String() string {
 func (*ContentBlock) ProtoMessage() {}
 
 func (x *ContentBlock) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[17]
+	mi := &file_mcp_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1148,7 +1252,7 @@ func (x *ContentBlock) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ContentBlock.ProtoReflect.Descriptor instead.
 func (*ContentBlock) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{17}
+	return file_mcp_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ContentBlock) GetContentType() isContentBlock_ContentType {
@@ -1248,7 +1352,7 @@ type TextContent struct {
 
 func (x *TextContent) Reset() {
 	*x = TextContent{}
-	mi := &file_mcp_proto_msgTypes[18]
+	mi := &file_mcp_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1260,7 +1364,7 @@ func (x *TextContent) String() string {
 func (*TextContent) ProtoMessage() {}
 
 func (x *TextContent) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[18]
+	mi := &file_mcp_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1273,7 +1377,7 @@ func (x *TextContent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TextContent.ProtoReflect.Descriptor instead.
 func (*TextContent) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{18}
+	return file_mcp_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *TextContent) GetText() string {
@@ -1309,7 +1413,7 @@ type ImageContent struct {
 
 func (x *ImageContent) Reset() {
 	*x = ImageContent{}
-	mi := &file_mcp_proto_msgTypes[19]
+	mi := &file_mcp_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1321,7 +1425,7 @@ func (x *ImageContent) String() string {
 func (*ImageContent) ProtoMessage() {}
 
 func (x *ImageContent) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[19]
+	mi := &file_mcp_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1334,7 +1438,7 @@ func (x *ImageContent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImageContent.ProtoReflect.Descriptor instead.
 func (*ImageContent) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{19}
+	return file_mcp_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ImageContent) GetData() []byte {
@@ -1377,7 +1481,7 @@ type AudioContent struct {
 
 func (x *AudioContent) Reset() {
 	*x = AudioContent{}
-	mi := &file_mcp_proto_msgTypes[20]
+	mi := &file_mcp_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1389,7 +1493,7 @@ func (x *AudioContent) String() string {
 func (*AudioContent) ProtoMessage() {}
 
 func (x *AudioContent) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[20]
+	mi := &file_mcp_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1402,7 +1506,7 @@ func (x *AudioContent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AudioContent.ProtoReflect.Descriptor instead.
 func (*AudioContent) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{20}
+	return file_mcp_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *AudioContent) GetData() []byte {
@@ -1443,7 +1547,7 @@ type ResourceLink struct {
 
 func (x *ResourceLink) Reset() {
 	*x = ResourceLink{}
-	mi := &file_mcp_proto_msgTypes[21]
+	mi := &file_mcp_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1455,7 +1559,7 @@ func (x *ResourceLink) String() string {
 func (*ResourceLink) ProtoMessage() {}
 
 func (x *ResourceLink) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[21]
+	mi := &file_mcp_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1468,7 +1572,7 @@ func (x *ResourceLink) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourceLink.ProtoReflect.Descriptor instead.
 func (*ResourceLink) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{21}
+	return file_mcp_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ResourceLink) GetType() string {
@@ -1501,7 +1605,7 @@ type EmbeddedResource struct {
 
 func (x *EmbeddedResource) Reset() {
 	*x = EmbeddedResource{}
-	mi := &file_mcp_proto_msgTypes[22]
+	mi := &file_mcp_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1513,7 +1617,7 @@ func (x *EmbeddedResource) String() string {
 func (*EmbeddedResource) ProtoMessage() {}
 
 func (x *EmbeddedResource) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[22]
+	mi := &file_mcp_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1526,7 +1630,7 @@ func (x *EmbeddedResource) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EmbeddedResource.ProtoReflect.Descriptor instead.
 func (*EmbeddedResource) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{22}
+	return file_mcp_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *EmbeddedResource) GetType() string {
@@ -1607,7 +1711,7 @@ type Resource struct {
 
 func (x *Resource) Reset() {
 	*x = Resource{}
-	mi := &file_mcp_proto_msgTypes[23]
+	mi := &file_mcp_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1619,7 +1723,7 @@ func (x *Resource) String() string {
 func (*Resource) ProtoMessage() {}
 
 func (x *Resource) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[23]
+	mi := &file_mcp_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1632,7 +1736,7 @@ func (x *Resource) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Resource.ProtoReflect.Descriptor instead.
 func (*Resource) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{23}
+	return file_mcp_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *Resource) GetName() string {
@@ -1703,7 +1807,7 @@ type TextResourceContents struct {
 
 func (x *TextResourceContents) Reset() {
 	*x = TextResourceContents{}
-	mi := &file_mcp_proto_msgTypes[24]
+	mi := &file_mcp_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1715,7 +1819,7 @@ func (x *TextResourceContents) String() string {
 func (*TextResourceContents) ProtoMessage() {}
 
 func (x *TextResourceContents) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[24]
+	mi := &file_mcp_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1728,7 +1832,7 @@ func (x *TextResourceContents) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TextResourceContents.ProtoReflect.Descriptor instead.
 func (*TextResourceContents) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{24}
+	return file_mcp_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *TextResourceContents) GetUri() string {
@@ -1771,7 +1875,7 @@ type BlobResourceContents struct {
 
 func (x *BlobResourceContents) Reset() {
 	*x = BlobResourceContents{}
-	mi := &file_mcp_proto_msgTypes[25]
+	mi := &file_mcp_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1783,7 +1887,7 @@ func (x *BlobResourceContents) String() string {
 func (*BlobResourceContents) ProtoMessage() {}
 
 func (x *BlobResourceContents) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[25]
+	mi := &file_mcp_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1796,7 +1900,7 @@ func (x *BlobResourceContents) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BlobResourceContents.ProtoReflect.Descriptor instead.
 func (*BlobResourceContents) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{25}
+	return file_mcp_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *BlobResourceContents) GetUri() string {
@@ -1838,7 +1942,7 @@ type Annotations struct {
 
 func (x *Annotations) Reset() {
 	*x = Annotations{}
-	mi := &file_mcp_proto_msgTypes[26]
+	mi := &file_mcp_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1850,7 +1954,7 @@ func (x *Annotations) String() string {
 func (*Annotations) ProtoMessage() {}
 
 func (x *Annotations) ProtoReflect() protoreflect.Message {
-	mi := &file_mcp_proto_msgTypes[26]
+	mi := &file_mcp_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1863,7 +1967,7 @@ func (x *Annotations) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Annotations.ProtoReflect.Descriptor instead.
 func (*Annotations) Descriptor() ([]byte, []int) {
-	return file_mcp_proto_rawDescGZIP(), []int{26}
+	return file_mcp_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *Annotations) GetAudience() []Role {
@@ -1885,6 +1989,214 @@ func (x *Annotations) GetLastModified() string {
 		return *x.LastModified
 	}
 	return ""
+}
+
+type PromptReference struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Type          string                 `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PromptReference) Reset() {
+	*x = PromptReference{}
+	mi := &file_mcp_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PromptReference) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PromptReference) ProtoMessage() {}
+
+func (x *PromptReference) ProtoReflect() protoreflect.Message {
+	mi := &file_mcp_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PromptReference.ProtoReflect.Descriptor instead.
+func (*PromptReference) Descriptor() ([]byte, []int) {
+	return file_mcp_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *PromptReference) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *PromptReference) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type CompletionArgument struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CompletionArgument) Reset() {
+	*x = CompletionArgument{}
+	mi := &file_mcp_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CompletionArgument) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CompletionArgument) ProtoMessage() {}
+
+func (x *CompletionArgument) ProtoReflect() protoreflect.Message {
+	mi := &file_mcp_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CompletionArgument.ProtoReflect.Descriptor instead.
+func (*CompletionArgument) Descriptor() ([]byte, []int) {
+	return file_mcp_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *CompletionArgument) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CompletionArgument) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+type CompletionContext struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Arguments     map[string]string      `protobuf:"bytes,1,rep,name=arguments,proto3" json:"arguments,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CompletionContext) Reset() {
+	*x = CompletionContext{}
+	mi := &file_mcp_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CompletionContext) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CompletionContext) ProtoMessage() {}
+
+func (x *CompletionContext) ProtoReflect() protoreflect.Message {
+	mi := &file_mcp_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CompletionContext.ProtoReflect.Descriptor instead.
+func (*CompletionContext) Descriptor() ([]byte, []int) {
+	return file_mcp_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *CompletionContext) GetArguments() map[string]string {
+	if x != nil {
+		return x.Arguments
+	}
+	return nil
+}
+
+type Completion struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Values        []string               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
+	Total         *int64                 `protobuf:"varint,2,opt,name=total,proto3,oneof" json:"total,omitempty"`
+	HasMore       *bool                  `protobuf:"varint,3,opt,name=hasMore,proto3,oneof" json:"hasMore,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Completion) Reset() {
+	*x = Completion{}
+	mi := &file_mcp_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Completion) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Completion) ProtoMessage() {}
+
+func (x *Completion) ProtoReflect() protoreflect.Message {
+	mi := &file_mcp_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Completion.ProtoReflect.Descriptor instead.
+func (*Completion) Descriptor() ([]byte, []int) {
+	return file_mcp_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *Completion) GetValues() []string {
+	if x != nil {
+		return x.Values
+	}
+	return nil
+}
+
+func (x *Completion) GetTotal() int64 {
+	if x != nil && x.Total != nil {
+		return *x.Total
+	}
+	return 0
+}
+
+func (x *Completion) GetHasMore() bool {
+	if x != nil && x.HasMore != nil {
+		return *x.HasMore
+	}
+	return false
 }
 
 var File_mcp_proto protoreflect.FileDescriptor
@@ -1933,7 +2245,15 @@ const file_mcp_proto_rawDesc = "" +
 	"\aisError\x18\x03 \x01(\bH\x01R\aisError\x88\x01\x01B\x14\n" +
 	"\x12_structuredContentB\n" +
 	"\n" +
-	"\b_isError\"\xd9\x02\n" +
+	"\b_isError\"\xa0\x01\n" +
+	"\x0fCompleteRequest\x12&\n" +
+	"\x03ref\x18\x01 \x01(\v2\x14.mcp.PromptReferenceR\x03ref\x123\n" +
+	"\bargument\x18\x02 \x01(\v2\x17.mcp.CompletionArgumentR\bargument\x120\n" +
+	"\acontext\x18\x03 \x01(\v2\x16.mcp.CompletionContextR\acontext\"A\n" +
+	"\x0eCompleteResult\x12/\n" +
+	"\n" +
+	"completion\x18\x01 \x01(\v2\x0f.mcp.CompletionR\n" +
+	"completion\"\xd9\x02\n" +
 	"\x12ClientCapabilities\x12M\n" +
 	"\fexperimental\x18\x01 \x03(\v2).mcp.ClientCapabilities.ExperimentalEntryR\fexperimental\x12*\n" +
 	"\x05roots\x18\x02 \x01(\v2\x14.mcp.RootsCapabilityR\x05roots\x123\n" +
@@ -2083,17 +2403,37 @@ const file_mcp_proto_rawDesc = "" +
 	"\bpriority\x18\x02 \x01(\x02H\x00R\bpriority\x88\x01\x01\x12'\n" +
 	"\flastModified\x18\x03 \x01(\tH\x01R\flastModified\x88\x01\x01B\v\n" +
 	"\t_priorityB\x0f\n" +
-	"\r_lastModified*5\n" +
+	"\r_lastModified\"9\n" +
+	"\x0fPromptReference\x12\x12\n" +
+	"\x04type\x18\x01 \x01(\tR\x04type\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\">\n" +
+	"\x12CompletionArgument\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\"\x96\x01\n" +
+	"\x11CompletionContext\x12C\n" +
+	"\targuments\x18\x01 \x03(\v2%.mcp.CompletionContext.ArgumentsEntryR\targuments\x1a<\n" +
+	"\x0eArgumentsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"t\n" +
+	"\n" +
+	"Completion\x12\x16\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values\x12\x19\n" +
+	"\x05total\x18\x02 \x01(\x03H\x00R\x05total\x88\x01\x01\x12\x1d\n" +
+	"\ahasMore\x18\x03 \x01(\bH\x01R\ahasMore\x88\x01\x01B\b\n" +
+	"\x06_totalB\n" +
+	"\n" +
+	"\b_hasMore*5\n" +
 	"\x04Role\x12\x14\n" +
 	"\x10ROLE_UNSPECIFIED\x10\x00\x12\b\n" +
 	"\x04USER\x10\x01\x12\r\n" +
-	"\tASSISTANT\x10\x022\xc6\x01\n" +
+	"\tASSISTANT\x10\x022\xfd\x01\n" +
 	"\x14ModelContextProtocol\x12;\n" +
 	"\n" +
 	"Initialize\x12\x16.mcp.InitializeRequest\x1a\x15.mcp.InitializeResult\x127\n" +
 	"\n" +
 	"CallMethod\x12\x14.mcp.CallToolRequest\x1a\x13.mcp.CallToolResult\x128\n" +
-	"\tListTools\x12\x15.mcp.ListToolsRequest\x1a\x14.mcp.ListToolsResultB\rZ\vgrpc2mcp/pbb\x06proto3"
+	"\tListTools\x12\x15.mcp.ListToolsRequest\x1a\x14.mcp.ListToolsResult\x125\n" +
+	"\bComplete\x12\x14.mcp.CompleteRequest\x1a\x13.mcp.CompleteResultB\rZ\vgrpc2mcp/pbb\x06proto3"
 
 var (
 	file_mcp_proto_rawDescOnce sync.Once
@@ -2108,7 +2448,7 @@ func file_mcp_proto_rawDescGZIP() []byte {
 }
 
 var file_mcp_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_mcp_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_mcp_proto_msgTypes = make([]protoimpl.MessageInfo, 38)
 var file_mcp_proto_goTypes = []any{
 	(Role)(0),                    // 0: mcp.Role
 	(*InitializeRequest)(nil),    // 1: mcp.InitializeRequest
@@ -2117,97 +2457,111 @@ var file_mcp_proto_goTypes = []any{
 	(*ListToolsResult)(nil),      // 4: mcp.ListToolsResult
 	(*CallToolRequest)(nil),      // 5: mcp.CallToolRequest
 	(*CallToolResult)(nil),       // 6: mcp.CallToolResult
-	(*ClientCapabilities)(nil),   // 7: mcp.ClientCapabilities
-	(*ServerCapabilities)(nil),   // 8: mcp.ServerCapabilities
-	(*RootsCapability)(nil),      // 9: mcp.RootsCapability
-	(*PromptsCapability)(nil),    // 10: mcp.PromptsCapability
-	(*ResourcesCapability)(nil),  // 11: mcp.ResourcesCapability
-	(*ToolsCapability)(nil),      // 12: mcp.ToolsCapability
-	(*Implementation)(nil),       // 13: mcp.Implementation
-	(*BaseMetadata)(nil),         // 14: mcp.BaseMetadata
-	(*Tool)(nil),                 // 15: mcp.Tool
-	(*JSONSchema)(nil),           // 16: mcp.JSONSchema
-	(*ToolAnnotations)(nil),      // 17: mcp.ToolAnnotations
-	(*ContentBlock)(nil),         // 18: mcp.ContentBlock
-	(*TextContent)(nil),          // 19: mcp.TextContent
-	(*ImageContent)(nil),         // 20: mcp.ImageContent
-	(*AudioContent)(nil),         // 21: mcp.AudioContent
-	(*ResourceLink)(nil),         // 22: mcp.ResourceLink
-	(*EmbeddedResource)(nil),     // 23: mcp.EmbeddedResource
-	(*Resource)(nil),             // 24: mcp.Resource
-	(*TextResourceContents)(nil), // 25: mcp.TextResourceContents
-	(*BlobResourceContents)(nil), // 26: mcp.BlobResourceContents
-	(*Annotations)(nil),          // 27: mcp.Annotations
-	nil,                          // 28: mcp.CallToolRequest.ArgumentsEntry
-	nil,                          // 29: mcp.ClientCapabilities.ExperimentalEntry
-	nil,                          // 30: mcp.ServerCapabilities.ExperimentalEntry
-	nil,                          // 31: mcp.JSONSchema.PropertiesEntry
-	(*structpb.Struct)(nil),      // 32: google.protobuf.Struct
-	(*structpb.Value)(nil),       // 33: google.protobuf.Value
+	(*CompleteRequest)(nil),      // 7: mcp.CompleteRequest
+	(*CompleteResult)(nil),       // 8: mcp.CompleteResult
+	(*ClientCapabilities)(nil),   // 9: mcp.ClientCapabilities
+	(*ServerCapabilities)(nil),   // 10: mcp.ServerCapabilities
+	(*RootsCapability)(nil),      // 11: mcp.RootsCapability
+	(*PromptsCapability)(nil),    // 12: mcp.PromptsCapability
+	(*ResourcesCapability)(nil),  // 13: mcp.ResourcesCapability
+	(*ToolsCapability)(nil),      // 14: mcp.ToolsCapability
+	(*Implementation)(nil),       // 15: mcp.Implementation
+	(*BaseMetadata)(nil),         // 16: mcp.BaseMetadata
+	(*Tool)(nil),                 // 17: mcp.Tool
+	(*JSONSchema)(nil),           // 18: mcp.JSONSchema
+	(*ToolAnnotations)(nil),      // 19: mcp.ToolAnnotations
+	(*ContentBlock)(nil),         // 20: mcp.ContentBlock
+	(*TextContent)(nil),          // 21: mcp.TextContent
+	(*ImageContent)(nil),         // 22: mcp.ImageContent
+	(*AudioContent)(nil),         // 23: mcp.AudioContent
+	(*ResourceLink)(nil),         // 24: mcp.ResourceLink
+	(*EmbeddedResource)(nil),     // 25: mcp.EmbeddedResource
+	(*Resource)(nil),             // 26: mcp.Resource
+	(*TextResourceContents)(nil), // 27: mcp.TextResourceContents
+	(*BlobResourceContents)(nil), // 28: mcp.BlobResourceContents
+	(*Annotations)(nil),          // 29: mcp.Annotations
+	(*PromptReference)(nil),      // 30: mcp.PromptReference
+	(*CompletionArgument)(nil),   // 31: mcp.CompletionArgument
+	(*CompletionContext)(nil),    // 32: mcp.CompletionContext
+	(*Completion)(nil),           // 33: mcp.Completion
+	nil,                          // 34: mcp.CallToolRequest.ArgumentsEntry
+	nil,                          // 35: mcp.ClientCapabilities.ExperimentalEntry
+	nil,                          // 36: mcp.ServerCapabilities.ExperimentalEntry
+	nil,                          // 37: mcp.JSONSchema.PropertiesEntry
+	nil,                          // 38: mcp.CompletionContext.ArgumentsEntry
+	(*structpb.Struct)(nil),      // 39: google.protobuf.Struct
+	(*structpb.Value)(nil),       // 40: google.protobuf.Value
 }
 var file_mcp_proto_depIdxs = []int32{
-	7,  // 0: mcp.InitializeRequest.capabilities:type_name -> mcp.ClientCapabilities
-	13, // 1: mcp.InitializeRequest.clientInfo:type_name -> mcp.Implementation
-	8,  // 2: mcp.InitializeResult.capabilities:type_name -> mcp.ServerCapabilities
-	13, // 3: mcp.InitializeResult.serverInfo:type_name -> mcp.Implementation
-	32, // 4: mcp.ListToolsRequest._meta:type_name -> google.protobuf.Struct
-	15, // 5: mcp.ListToolsResult.tools:type_name -> mcp.Tool
-	32, // 6: mcp.ListToolsResult._meta:type_name -> google.protobuf.Struct
-	28, // 7: mcp.CallToolRequest.arguments:type_name -> mcp.CallToolRequest.ArgumentsEntry
-	32, // 8: mcp.CallToolRequest._meta:type_name -> google.protobuf.Struct
-	18, // 9: mcp.CallToolResult.content:type_name -> mcp.ContentBlock
-	32, // 10: mcp.CallToolResult.structuredContent:type_name -> google.protobuf.Struct
-	29, // 11: mcp.ClientCapabilities.experimental:type_name -> mcp.ClientCapabilities.ExperimentalEntry
-	9,  // 12: mcp.ClientCapabilities.roots:type_name -> mcp.RootsCapability
-	32, // 13: mcp.ClientCapabilities.sampling:type_name -> google.protobuf.Struct
-	32, // 14: mcp.ClientCapabilities.elicitation:type_name -> google.protobuf.Struct
-	30, // 15: mcp.ServerCapabilities.experimental:type_name -> mcp.ServerCapabilities.ExperimentalEntry
-	32, // 16: mcp.ServerCapabilities.logging:type_name -> google.protobuf.Struct
-	32, // 17: mcp.ServerCapabilities.completions:type_name -> google.protobuf.Struct
-	10, // 18: mcp.ServerCapabilities.prompts:type_name -> mcp.PromptsCapability
-	11, // 19: mcp.ServerCapabilities.resources:type_name -> mcp.ResourcesCapability
-	12, // 20: mcp.ServerCapabilities.tools:type_name -> mcp.ToolsCapability
-	16, // 21: mcp.Tool.inputSchema:type_name -> mcp.JSONSchema
-	16, // 22: mcp.Tool.outputSchema:type_name -> mcp.JSONSchema
-	17, // 23: mcp.Tool.annotations:type_name -> mcp.ToolAnnotations
-	32, // 24: mcp.Tool._meta:type_name -> google.protobuf.Struct
-	31, // 25: mcp.JSONSchema.properties:type_name -> mcp.JSONSchema.PropertiesEntry
-	19, // 26: mcp.ContentBlock.text:type_name -> mcp.TextContent
-	20, // 27: mcp.ContentBlock.image:type_name -> mcp.ImageContent
-	21, // 28: mcp.ContentBlock.audio:type_name -> mcp.AudioContent
-	22, // 29: mcp.ContentBlock.resourceLink:type_name -> mcp.ResourceLink
-	23, // 30: mcp.ContentBlock.embeddedResource:type_name -> mcp.EmbeddedResource
-	27, // 31: mcp.TextContent.annotations:type_name -> mcp.Annotations
-	32, // 32: mcp.TextContent._meta:type_name -> google.protobuf.Struct
-	27, // 33: mcp.ImageContent.annotations:type_name -> mcp.Annotations
-	32, // 34: mcp.ImageContent._meta:type_name -> google.protobuf.Struct
-	27, // 35: mcp.AudioContent.annotations:type_name -> mcp.Annotations
-	32, // 36: mcp.AudioContent._meta:type_name -> google.protobuf.Struct
-	24, // 37: mcp.ResourceLink.resource:type_name -> mcp.Resource
-	25, // 38: mcp.EmbeddedResource.textResource:type_name -> mcp.TextResourceContents
-	26, // 39: mcp.EmbeddedResource.blobResource:type_name -> mcp.BlobResourceContents
-	27, // 40: mcp.EmbeddedResource.annotations:type_name -> mcp.Annotations
-	32, // 41: mcp.EmbeddedResource._meta:type_name -> google.protobuf.Struct
-	27, // 42: mcp.Resource.annotations:type_name -> mcp.Annotations
-	32, // 43: mcp.Resource._meta:type_name -> google.protobuf.Struct
-	32, // 44: mcp.TextResourceContents._meta:type_name -> google.protobuf.Struct
-	32, // 45: mcp.BlobResourceContents._meta:type_name -> google.protobuf.Struct
-	0,  // 46: mcp.Annotations.audience:type_name -> mcp.Role
-	33, // 47: mcp.CallToolRequest.ArgumentsEntry.value:type_name -> google.protobuf.Value
-	32, // 48: mcp.ClientCapabilities.ExperimentalEntry.value:type_name -> google.protobuf.Struct
-	32, // 49: mcp.ServerCapabilities.ExperimentalEntry.value:type_name -> google.protobuf.Struct
-	16, // 50: mcp.JSONSchema.PropertiesEntry.value:type_name -> mcp.JSONSchema
-	1,  // 51: mcp.ModelContextProtocol.Initialize:input_type -> mcp.InitializeRequest
-	5,  // 52: mcp.ModelContextProtocol.CallMethod:input_type -> mcp.CallToolRequest
-	3,  // 53: mcp.ModelContextProtocol.ListTools:input_type -> mcp.ListToolsRequest
-	2,  // 54: mcp.ModelContextProtocol.Initialize:output_type -> mcp.InitializeResult
-	6,  // 55: mcp.ModelContextProtocol.CallMethod:output_type -> mcp.CallToolResult
-	4,  // 56: mcp.ModelContextProtocol.ListTools:output_type -> mcp.ListToolsResult
-	54, // [54:57] is the sub-list for method output_type
-	51, // [51:54] is the sub-list for method input_type
-	51, // [51:51] is the sub-list for extension type_name
-	51, // [51:51] is the sub-list for extension extendee
-	0,  // [0:51] is the sub-list for field type_name
+	9,  // 0: mcp.InitializeRequest.capabilities:type_name -> mcp.ClientCapabilities
+	15, // 1: mcp.InitializeRequest.clientInfo:type_name -> mcp.Implementation
+	10, // 2: mcp.InitializeResult.capabilities:type_name -> mcp.ServerCapabilities
+	15, // 3: mcp.InitializeResult.serverInfo:type_name -> mcp.Implementation
+	39, // 4: mcp.ListToolsRequest._meta:type_name -> google.protobuf.Struct
+	17, // 5: mcp.ListToolsResult.tools:type_name -> mcp.Tool
+	39, // 6: mcp.ListToolsResult._meta:type_name -> google.protobuf.Struct
+	34, // 7: mcp.CallToolRequest.arguments:type_name -> mcp.CallToolRequest.ArgumentsEntry
+	39, // 8: mcp.CallToolRequest._meta:type_name -> google.protobuf.Struct
+	20, // 9: mcp.CallToolResult.content:type_name -> mcp.ContentBlock
+	39, // 10: mcp.CallToolResult.structuredContent:type_name -> google.protobuf.Struct
+	30, // 11: mcp.CompleteRequest.ref:type_name -> mcp.PromptReference
+	31, // 12: mcp.CompleteRequest.argument:type_name -> mcp.CompletionArgument
+	32, // 13: mcp.CompleteRequest.context:type_name -> mcp.CompletionContext
+	33, // 14: mcp.CompleteResult.completion:type_name -> mcp.Completion
+	35, // 15: mcp.ClientCapabilities.experimental:type_name -> mcp.ClientCapabilities.ExperimentalEntry
+	11, // 16: mcp.ClientCapabilities.roots:type_name -> mcp.RootsCapability
+	39, // 17: mcp.ClientCapabilities.sampling:type_name -> google.protobuf.Struct
+	39, // 18: mcp.ClientCapabilities.elicitation:type_name -> google.protobuf.Struct
+	36, // 19: mcp.ServerCapabilities.experimental:type_name -> mcp.ServerCapabilities.ExperimentalEntry
+	39, // 20: mcp.ServerCapabilities.logging:type_name -> google.protobuf.Struct
+	39, // 21: mcp.ServerCapabilities.completions:type_name -> google.protobuf.Struct
+	12, // 22: mcp.ServerCapabilities.prompts:type_name -> mcp.PromptsCapability
+	13, // 23: mcp.ServerCapabilities.resources:type_name -> mcp.ResourcesCapability
+	14, // 24: mcp.ServerCapabilities.tools:type_name -> mcp.ToolsCapability
+	18, // 25: mcp.Tool.inputSchema:type_name -> mcp.JSONSchema
+	18, // 26: mcp.Tool.outputSchema:type_name -> mcp.JSONSchema
+	19, // 27: mcp.Tool.annotations:type_name -> mcp.ToolAnnotations
+	39, // 28: mcp.Tool._meta:type_name -> google.protobuf.Struct
+	37, // 29: mcp.JSONSchema.properties:type_name -> mcp.JSONSchema.PropertiesEntry
+	21, // 30: mcp.ContentBlock.text:type_name -> mcp.TextContent
+	22, // 31: mcp.ContentBlock.image:type_name -> mcp.ImageContent
+	23, // 32: mcp.ContentBlock.audio:type_name -> mcp.AudioContent
+	24, // 33: mcp.ContentBlock.resourceLink:type_name -> mcp.ResourceLink
+	25, // 34: mcp.ContentBlock.embeddedResource:type_name -> mcp.EmbeddedResource
+	29, // 35: mcp.TextContent.annotations:type_name -> mcp.Annotations
+	39, // 36: mcp.TextContent._meta:type_name -> google.protobuf.Struct
+	29, // 37: mcp.ImageContent.annotations:type_name -> mcp.Annotations
+	39, // 38: mcp.ImageContent._meta:type_name -> google.protobuf.Struct
+	29, // 39: mcp.AudioContent.annotations:type_name -> mcp.Annotations
+	39, // 40: mcp.AudioContent._meta:type_name -> google.protobuf.Struct
+	26, // 41: mcp.ResourceLink.resource:type_name -> mcp.Resource
+	27, // 42: mcp.EmbeddedResource.textResource:type_name -> mcp.TextResourceContents
+	28, // 43: mcp.EmbeddedResource.blobResource:type_name -> mcp.BlobResourceContents
+	29, // 44: mcp.EmbeddedResource.annotations:type_name -> mcp.Annotations
+	39, // 45: mcp.EmbeddedResource._meta:type_name -> google.protobuf.Struct
+	29, // 46: mcp.Resource.annotations:type_name -> mcp.Annotations
+	39, // 47: mcp.Resource._meta:type_name -> google.protobuf.Struct
+	39, // 48: mcp.TextResourceContents._meta:type_name -> google.protobuf.Struct
+	39, // 49: mcp.BlobResourceContents._meta:type_name -> google.protobuf.Struct
+	0,  // 50: mcp.Annotations.audience:type_name -> mcp.Role
+	38, // 51: mcp.CompletionContext.arguments:type_name -> mcp.CompletionContext.ArgumentsEntry
+	40, // 52: mcp.CallToolRequest.ArgumentsEntry.value:type_name -> google.protobuf.Value
+	39, // 53: mcp.ClientCapabilities.ExperimentalEntry.value:type_name -> google.protobuf.Struct
+	39, // 54: mcp.ServerCapabilities.ExperimentalEntry.value:type_name -> google.protobuf.Struct
+	18, // 55: mcp.JSONSchema.PropertiesEntry.value:type_name -> mcp.JSONSchema
+	1,  // 56: mcp.ModelContextProtocol.Initialize:input_type -> mcp.InitializeRequest
+	5,  // 57: mcp.ModelContextProtocol.CallMethod:input_type -> mcp.CallToolRequest
+	3,  // 58: mcp.ModelContextProtocol.ListTools:input_type -> mcp.ListToolsRequest
+	7,  // 59: mcp.ModelContextProtocol.Complete:input_type -> mcp.CompleteRequest
+	2,  // 60: mcp.ModelContextProtocol.Initialize:output_type -> mcp.InitializeResult
+	6,  // 61: mcp.ModelContextProtocol.CallMethod:output_type -> mcp.CallToolResult
+	4,  // 62: mcp.ModelContextProtocol.ListTools:output_type -> mcp.ListToolsResult
+	8,  // 63: mcp.ModelContextProtocol.Complete:output_type -> mcp.CompleteResult
+	60, // [60:64] is the sub-list for method output_type
+	56, // [56:60] is the sub-list for method input_type
+	56, // [56:56] is the sub-list for extension type_name
+	56, // [56:56] is the sub-list for extension extendee
+	0,  // [0:56] is the sub-list for field type_name
 }
 
 func init() { file_mcp_proto_init() }
@@ -2220,39 +2574,40 @@ func file_mcp_proto_init() {
 	file_mcp_proto_msgTypes[3].OneofWrappers = []any{}
 	file_mcp_proto_msgTypes[4].OneofWrappers = []any{}
 	file_mcp_proto_msgTypes[5].OneofWrappers = []any{}
-	file_mcp_proto_msgTypes[8].OneofWrappers = []any{}
-	file_mcp_proto_msgTypes[9].OneofWrappers = []any{}
 	file_mcp_proto_msgTypes[10].OneofWrappers = []any{}
 	file_mcp_proto_msgTypes[11].OneofWrappers = []any{}
 	file_mcp_proto_msgTypes[12].OneofWrappers = []any{}
 	file_mcp_proto_msgTypes[13].OneofWrappers = []any{}
 	file_mcp_proto_msgTypes[14].OneofWrappers = []any{}
+	file_mcp_proto_msgTypes[15].OneofWrappers = []any{}
 	file_mcp_proto_msgTypes[16].OneofWrappers = []any{}
-	file_mcp_proto_msgTypes[17].OneofWrappers = []any{
+	file_mcp_proto_msgTypes[18].OneofWrappers = []any{}
+	file_mcp_proto_msgTypes[19].OneofWrappers = []any{
 		(*ContentBlock_Text)(nil),
 		(*ContentBlock_Image)(nil),
 		(*ContentBlock_Audio)(nil),
 		(*ContentBlock_ResourceLink)(nil),
 		(*ContentBlock_EmbeddedResource)(nil),
 	}
-	file_mcp_proto_msgTypes[18].OneofWrappers = []any{}
-	file_mcp_proto_msgTypes[19].OneofWrappers = []any{}
 	file_mcp_proto_msgTypes[20].OneofWrappers = []any{}
-	file_mcp_proto_msgTypes[22].OneofWrappers = []any{
+	file_mcp_proto_msgTypes[21].OneofWrappers = []any{}
+	file_mcp_proto_msgTypes[22].OneofWrappers = []any{}
+	file_mcp_proto_msgTypes[24].OneofWrappers = []any{
 		(*EmbeddedResource_TextResource)(nil),
 		(*EmbeddedResource_BlobResource)(nil),
 	}
-	file_mcp_proto_msgTypes[23].OneofWrappers = []any{}
-	file_mcp_proto_msgTypes[24].OneofWrappers = []any{}
 	file_mcp_proto_msgTypes[25].OneofWrappers = []any{}
 	file_mcp_proto_msgTypes[26].OneofWrappers = []any{}
+	file_mcp_proto_msgTypes[27].OneofWrappers = []any{}
+	file_mcp_proto_msgTypes[28].OneofWrappers = []any{}
+	file_mcp_proto_msgTypes[32].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mcp_proto_rawDesc), len(file_mcp_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   31,
+			NumMessages:   38,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

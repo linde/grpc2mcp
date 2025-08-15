@@ -14,6 +14,7 @@ service ModelContextProtocol {
     rpc Initialize(InitializeRequest) returns (InitializeResult);
     rpc CallMethod(CallToolRequest) returns (CallToolResult);
     rpc ListTools(ListToolsRequest) returns (ListToolsResult);
+    rpc Complete(CompleteRequest) returns (CompleteResult);
 }
 
 // ----------------------------------------------------------------
@@ -54,6 +55,16 @@ message CallToolResult {
     repeated ContentBlock content = 1;
     optional google.protobuf.Struct structuredContent = 2;
     optional bool isError = 3;
+}
+
+message CompleteRequest {
+    PromptReference ref = 1;
+    CompletionArgument argument = 2;
+    CompletionContext context = 3;
+}
+
+message CompleteResult {
+    Completion completion = 1;
 }
 
 // ----------------------------------------------------------------
@@ -202,6 +213,26 @@ message Annotations {
     repeated Role audience = 1;
     optional float priority = 2;
     optional string lastModified = 3;
+}
+
+message PromptReference {
+    string type = 1;
+    string name = 2;
+}
+
+message CompletionArgument {
+    string name = 1;
+    string value = 2;
+}
+
+message CompletionContext {
+    map<string, string> arguments = 1;
+}
+
+message Completion {
+    repeated string values = 1;
+    optional int64 total = 2;
+    optional bool hasMore = 3;
 }
 
 enum Role {

@@ -74,4 +74,42 @@ grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
 # also we can call to list the tools
 grpcurl -H "${MCP_SESSION_HEADER}" -plaintext localhost:8080 mcp.ModelContextProtocol/ListTools
 
+# and we can call for completions
+grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
+    -d @ localhost:8080 mcp.ModelContextProtocol/Complete <<EOF
+{
+    "ref": {
+        "prompt": {
+            "type": "ref/prompt",
+            "name": "code_review"
+        }
+    },
+    "argument": {
+        "name": "language",
+        "value": "py"
+    },
+    "context": {
+        "arguments": {}
+    }
+}
+EOF
+
+
+grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
+    -d @ localhost:8080 mcp.ModelContextProtocol/Complete <<EOF
+{
+    "ref": {
+      "type": "ref/prompt",
+      "name": "code_review"
+    },
+    "argument": {
+      "name": "language",
+      "value": "py"
+    },
+    "context": {
+        "arguments": {}
+    }
+}
+EOF
+
 ```

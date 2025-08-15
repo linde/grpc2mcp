@@ -182,6 +182,15 @@ func (s *Server) ListTools(ctx context.Context, req *mcp.ListToolsRequest) (*mcp
 
 }
 
+func (s *Server) Complete(ctx context.Context, req *mcp.CompleteRequest) (*mcp.CompleteResult, error) {
+	log.Printf("Complete requested: %v", req)
+
+	var result mcp.CompleteResult
+	err := s.doRpcCall(ctx, req, "completion/complete", &result)
+
+	return &result, err
+}
+
 // This is the heart of doing a session jsonrpc call and unpacking, then deserializing the result.
 func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage, method string, rpcResultPtr any) error {
 
@@ -193,16 +202,17 @@ func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage, m
 	headers := map[string]string{MCP_SESSION_ID_HEADER: sessionID}
 	jsonRpcResponseParts, err := getJSONRPCRequestResponse(ctx, s.mcpHost, s.mcpPort, s.mcpUri, method, req, headers)
 	if err != nil {
-		status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
+		return status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
 	}
 
 	var jsonRPCResp JSONRPCResponse
 	if err := json.Unmarshal([]byte(jsonRpcResponseParts["data"]), &jsonRPCResp); err != nil {
-		status.Errorf(codes.Internal, "failed to unmarshal mcp server response: %v", err)
+		return status.Errorf(codes.Internal, "failed to unmarshal mcp server response: %v", err)
 	}
 
 	if jsonRPCResp.Error != nil {
-		status.Errorf(codes.Aborted, "mcp server returned an error: %s", jsonRPCResp.Error.Message)
+		return status.Errorf(codes.Aborted, "MCP server returned an error (code %d): %s",
+			jsonRPCResp.Error.Code, jsonRPCResp.Error.Message)
 	}
 
 	if err := json.Unmarshal(jsonRPCResp.Result, rpcResultPtr); err != nil {

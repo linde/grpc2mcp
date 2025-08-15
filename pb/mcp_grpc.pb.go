@@ -22,6 +22,7 @@ const (
 	ModelContextProtocol_Initialize_FullMethodName = "/mcp.ModelContextProtocol/Initialize"
 	ModelContextProtocol_CallMethod_FullMethodName = "/mcp.ModelContextProtocol/CallMethod"
 	ModelContextProtocol_ListTools_FullMethodName  = "/mcp.ModelContextProtocol/ListTools"
+	ModelContextProtocol_Complete_FullMethodName   = "/mcp.ModelContextProtocol/Complete"
 )
 
 // ModelContextProtocolClient is the client API for ModelContextProtocol service.
@@ -31,6 +32,7 @@ type ModelContextProtocolClient interface {
 	Initialize(ctx context.Context, in *InitializeRequest, opts ...grpc.CallOption) (*InitializeResult, error)
 	CallMethod(ctx context.Context, in *CallToolRequest, opts ...grpc.CallOption) (*CallToolResult, error)
 	ListTools(ctx context.Context, in *ListToolsRequest, opts ...grpc.CallOption) (*ListToolsResult, error)
+	Complete(ctx context.Context, in *CompleteRequest, opts ...grpc.CallOption) (*CompleteResult, error)
 }
 
 type modelContextProtocolClient struct {
@@ -71,6 +73,16 @@ func (c *modelContextProtocolClient) ListTools(ctx context.Context, in *ListTool
 	return out, nil
 }
 
+func (c *modelContextProtocolClient) Complete(ctx context.Context, in *CompleteRequest, opts ...grpc.CallOption) (*CompleteResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CompleteResult)
+	err := c.cc.Invoke(ctx, ModelContextProtocol_Complete_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ModelContextProtocolServer is the server API for ModelContextProtocol service.
 // All implementations should embed UnimplementedModelContextProtocolServer
 // for forward compatibility.
@@ -78,6 +90,7 @@ type ModelContextProtocolServer interface {
 	Initialize(context.Context, *InitializeRequest) (*InitializeResult, error)
 	CallMethod(context.Context, *CallToolRequest) (*CallToolResult, error)
 	ListTools(context.Context, *ListToolsRequest) (*ListToolsResult, error)
+	Complete(context.Context, *CompleteRequest) (*CompleteResult, error)
 }
 
 // UnimplementedModelContextProtocolServer should be embedded to have
@@ -95,6 +108,9 @@ func (UnimplementedModelContextProtocolServer) CallMethod(context.Context, *Call
 }
 func (UnimplementedModelContextProtocolServer) ListTools(context.Context, *ListToolsRequest) (*ListToolsResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTools not implemented")
+}
+func (UnimplementedModelContextProtocolServer) Complete(context.Context, *CompleteRequest) (*CompleteResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Complete not implemented")
 }
 func (UnimplementedModelContextProtocolServer) testEmbeddedByValue() {}
 
@@ -170,6 +186,24 @@ func _ModelContextProtocol_ListTools_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ModelContextProtocol_Complete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompleteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelContextProtocolServer).Complete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModelContextProtocol_Complete_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelContextProtocolServer).Complete(ctx, req.(*CompleteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ModelContextProtocol_ServiceDesc is the grpc.ServiceDesc for ModelContextProtocol service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -188,6 +222,10 @@ var ModelContextProtocol_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTools",
 			Handler:    _ModelContextProtocol_ListTools_Handler,
+		},
+		{
+			MethodName: "Complete",
+			Handler:    _ModelContextProtocol_Complete_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
