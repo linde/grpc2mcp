@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-
-	"grpc2mcp/internal/server"
+	"grpc2mcp/internal/proxy"
+	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -11,23 +11,28 @@ import (
 var (
 	mcpHost string
 	mcpPort int
-	port    int
 	mcpUri  string
+	port    int
 )
 
 var proxyCmd = &cobra.Command{
 	Use:   "proxy",
 	Short: "Starts the gRPC to MCP proxy",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Printf("Starting proxy to %s:%d%s on port %d\n", mcpHost, mcpPort, mcpUri, port)
-		s, err := server.NewServer(mcpHost, mcpPort, mcpUri)
+		log.Printf("starting proxy to %s:%d%s on port %d\n", mcpHost, mcpPort, mcpUri, port)
+		s, err := proxy.NewServer(mcpHost, mcpPort, mcpUri)
 		if err != nil {
 			return fmt.Errorf("failed to create proxy server: %w", err)
 		}
-		if err := s.Start(port); err != nil {
+
+		lisAddr, shutdownFunc, err := s.StartAsync(port)
+		defer shutdownFunc()
+		if err != nil {
 			return fmt.Errorf("failed to start proxy server: %w", err)
 		}
-		return nil
+		log.Printf("proxy server listening on: %v:%v", lisAddr.IP, lisAddr.Port)
+
+		select {} // wait
 	},
 }
 

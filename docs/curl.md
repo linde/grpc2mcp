@@ -6,10 +6,12 @@ The follow show raw `curl` examples which the grpc proxy is implementing
 
 
 ```bash
+export PORT=8888
+
 # start initialization
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
     -H "Content-Type: application/json"  http://localhost:8888/mcp/ \
-     -d @- http://localhost:8888/mcp <<EOF
+     -d @- http://localhost:${PORT}/mcp <<EOF
 { 
     "jsonrpc": "2.0", 
     "id": "1", 
@@ -29,21 +31,21 @@ export MCP_SESSION_ID=[get it from above curl call response header]
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
     -H "Content-Type: application/json" \
     -H "mcp-session-id: ${MCP_SESSION_ID}" \
-    -d '{ "jsonrpc": "2.0", "method": "notifications/initialized"}' http://localhost:8888/mcp
+    -d '{ "jsonrpc": "2.0", "method": "notifications/initialized"}' http://localhost:${PORT}/mcp
 
 
 # then, list what's available
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
     -H "Content-Type: application/json" \
     -H "mcp-session-id: ${MCP_SESSION_ID}" \
-    -d '{ "jsonrpc": "2.0", "id": 1, "method": "tools/list"}' http://localhost:8888/mcp
+    -d '{ "jsonrpc": "2.0", "id": 1, "method": "tools/list"}' http://localhost:${PORT}/mcp
 
 # then make tool calls!
 
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
      -H "Content-Type: application/json" \
      -H "mcp-session-id: ${MCP_SESSION_ID}" \
-     -d @- http://localhost:8888/mcp <<EOF
+     -d @- http://localhost:${PORT}/mcp <<EOF
 {
     "jsonrpc": "2.0",
     "id": "1",
@@ -62,7 +64,7 @@ EOF
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
      -H "Content-Type: application/json" \
      -H "mcp-session-id: ${MCP_SESSION_ID}" \
-     http://localhost:8888/mcp -d @- <<EOF
+     http://localhost:${PORT}/mcp -d @- <<EOF
 {
   "jsonrpc": "2.0",
   "id": 1,
@@ -85,7 +87,7 @@ EOF
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
      -H "Content-Type: application/json" \
      -H "mcp-session-id: ${MCP_SESSION_ID}" \
-     -d @- http://localhost:8888/mcp <<EOF
+     -d @- http://localhost:${PORT}/mcp <<EOF
 {
   "jsonrpc": "2.0",
   "id": "123",
