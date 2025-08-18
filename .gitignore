@@ -2,3 +2,5 @@ vendor/
 .venv/
 .vscode/
 __debug_bin*
+coverage.out
+coverage.html
