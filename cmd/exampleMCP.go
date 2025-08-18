@@ -6,9 +6,6 @@ import (
 	"grpc2mcp/internal/examplemcp"
 	"log"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -47,10 +44,8 @@ func runExampleMCPServer(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	// Wait for interrupt signal to gracefully shutdown the server
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	// Wait for the context to be cancelled
+	<-cmd.Context().Done()
 	log.Println("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

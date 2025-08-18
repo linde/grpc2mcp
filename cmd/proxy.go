@@ -32,7 +32,12 @@ var proxyCmd = &cobra.Command{
 		}
 		log.Printf("proxy server listening on: %v:%v", lisAddr.IP, lisAddr.Port)
 
-		select {} // wait
+		// Wait for the context to be cancelled
+		<-cmd.Context().Done()
+		log.Println("Shutting down proxy server...")
+
+		// shutdownFunc is called from defer above
+		return nil
 	},
 }
 

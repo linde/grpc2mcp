@@ -7,8 +7,7 @@ import (
 	"time"
 )
 
-// This unit test executes the proxy command with default flags so we can debug
-func TestProxyCommand(t *testing.T) {
+func TestExampleMCPCommand(t *testing.T) {
 
 	// Create a cancellable context
 	cancelableCtx, cancel := context.WithCancel(context.Background())
@@ -19,9 +18,9 @@ func TestProxyCommand(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		rootCmd.SetArgs([]string{"proxy"})
+		rootCmd.SetArgs([]string{"exampleMCP"})
 		rootCmd.SetContext(cancelableCtx)
-		runningCheckStr := "proxy server listening on"
+		runningCheckStr := "Example MCP server 'trivy' listening on"
 		GenericCommandRunner(t, rootCmd, runningCheckStr)
 	}()
 
@@ -31,4 +30,5 @@ func TestProxyCommand(t *testing.T) {
 	cancel()
 	// don't exit until it has called our wg.Done()
 	wg.Wait()
+
 }
