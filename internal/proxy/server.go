@@ -174,7 +174,7 @@ func (s *Server) Initialize(ctx context.Context, req *mcp.InitializeRequest) (*m
 
 // CallMethod implements the CallMethod RPC.
 func (s *Server) CallMethod(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	log.Printf("CallMethod requested for method '%s': %v", req.Name, req)
+	// log.Printf("CallMethod requested for method '%s': %v", req.Name, req)
 
 	var result mcp.CallToolResult
 	err := s.doRpcCall(ctx, req, "tools/call", &result)

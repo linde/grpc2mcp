@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"grpc2mcp/internal/test"
+	"grpc2mcp/internal/examplemcp"
 	"log"
 	"net/http"
 	"os"
@@ -31,7 +31,7 @@ func init() {
 }
 
 func runTrivyServer(cmd *cobra.Command, args []string) {
-	handler := test.RunTrivyServer(trivyName)
+	handler := examplemcp.RunTrivyServer(trivyName)
 
 	addr := fmt.Sprintf(":%d", trivyPort)
 	server := &http.Server{

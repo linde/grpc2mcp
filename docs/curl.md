@@ -2,7 +2,9 @@
 
 # Curl Samples
 
-The follow show raw `curl` examples which the grpc proxy is implementing
+The follow show raw `curl` examples which the grpc proxy is proxying. To try them,
+run a server using either of the MCP examples in ([example-mcp](../example-mcp/README.md))
+or point to your favorite other MCP server.
 
 
 ```bash

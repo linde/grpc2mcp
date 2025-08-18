@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"grpc2mcp/internal/examplemcp"
 	"grpc2mcp/internal/proxy"
 	"grpc2mcp/pb"
+
 	"log"
 	"net"
 	"net/http"
@@ -59,7 +61,7 @@ func getShutdownFuncForList(shutdownFuncs []func()) func() {
 
 func SetupMcpAndProxyAsync(mcpServerName string) (*grpc.ClientConn, func(), error) {
 
-	handler := RunTrivyServer(mcpServerName)
+	handler := examplemcp.RunTrivyServer(mcpServerName)
 	mcpListener, trivyServerCancelFunc, err := RunServerAsync(handler)
 	shutdownFuncs := []func(){trivyServerCancelFunc}
 	if err != nil {
