@@ -16,7 +16,7 @@ type AddParams struct {
 
 func Add(ctx context.Context, req *mcp.ServerRequest[*mcp.CallToolParamsFor[AddParams]]) (*mcp.CallToolResultFor[any], error) {
 	result := req.Params.Arguments.A + req.Params.Arguments.B
-	st, err := structpb.NewStruct(map[string]interface{}{"result": result})
+	st, err := structpb.NewStruct(map[string]any{"result": result})
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ type MultParams struct {
 
 func Mult(ctx context.Context, req *mcp.ServerRequest[*mcp.CallToolParamsFor[MultParams]]) (*mcp.CallToolResultFor[any], error) {
 	result := req.Params.Arguments.A * req.Params.Arguments.B
-	st, err := structpb.NewStruct(map[string]interface{}{"result": result})
+	st, err := structpb.NewStruct(map[string]any{"result": result})
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ type LowerParams struct {
 
 func Lower(ctx context.Context, req *mcp.ServerRequest[*mcp.CallToolParamsFor[LowerParams]]) (*mcp.CallToolResultFor[any], error) {
 	result := strings.ToLower(req.Params.Arguments.S)
-	st, err := structpb.NewStruct(map[string]interface{}{"result": result})
+	st, err := structpb.NewStruct(map[string]any{"result": result})
 	if err != nil {
 		return nil, err
 	}

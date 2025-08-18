@@ -71,7 +71,7 @@ func (s *Server) StartAsync(port int) (*net.TCPAddr, context.CancelFunc, error) 
 }
 
 // sessionInterceptor is a gRPC unary interceptor that checks for the mcp-session-id header.
-func sessionInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func sessionInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	// bypass the interceptor for the Initialize method
 	if strings.HasSuffix(info.FullMethod, "Initialize") {
 		return handler(ctx, req)
