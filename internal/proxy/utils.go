@@ -1,11 +1,10 @@
-package test
+package proxy
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"grpc2mcp/internal/examplemcp"
-	"grpc2mcp/internal/proxy"
 	"grpc2mcp/pb"
 
 	"log"
@@ -72,7 +71,7 @@ func SetupMcpAndProxyAsync(mcpServerName string) (*grpc.ClientConn, func(), erro
 	mcpTcpAddr, _ := mcpListener.Addr().(*net.TCPAddr)
 	host, port := "0.0.0.0", mcpTcpAddr.Port
 	log.Printf("mcp handler listening on: %s:%d", host, port)
-	s, err := proxy.NewServer(host, port, "/")
+	s, err := NewServer(host, port, "/")
 	if err != nil {
 		return nil, getShutdownFuncForList(shutdownFuncs), fmt.Errorf("failed to create proxy server: %w", err)
 	}
@@ -99,9 +98,9 @@ func doInitialize(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClie
 		return nil, fmt.Errorf("error making Initialize grpc call: %w", err)
 	}
 
-	mcpSessionId := sessionHeader.Get(proxy.MCP_SESSION_ID_HEADER)
+	mcpSessionId := sessionHeader.Get(MCP_SESSION_ID_HEADER)
 	if len(mcpSessionId) < 1 {
-		errStr := fmt.Sprintf("did not receive mcp session id: %s", proxy.MCP_SESSION_ID_HEADER)
+		errStr := fmt.Sprintf("did not receive mcp session id: %s", MCP_SESSION_ID_HEADER)
 		return nil, errors.New(errStr)
 	}
 	clientCtx := metadata.NewOutgoingContext(context.Background(), sessionHeader)

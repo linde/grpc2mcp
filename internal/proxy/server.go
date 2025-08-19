@@ -70,6 +70,24 @@ func (s *Server) StartAsync(port int) (*net.TCPAddr, context.CancelFunc, error) 
 	return tcpAddr, grpcServer.GracefulStop, nil
 }
 
+// StartProxyToListenerAsync starts the gRPC server in its own goroutine. returns a func to shut it down.
+func (s *Server) StartProxyToListenerAsync(lis net.Listener) (context.CancelFunc, error) {
+
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(sessionInterceptor),
+	)
+	mcp.RegisterModelContextProtocolServer(grpcServer, s)
+	reflection.Register(grpcServer)
+	go func() {
+		err := grpcServer.Serve(lis)
+		if err != nil {
+			log.Printf("grpcServer.Serve error: %v", err)
+		}
+	}()
+
+	return grpcServer.GracefulStop, nil
+}
+
 // sessionInterceptor is a gRPC unary interceptor that checks for the mcp-session-id header.
 func sessionInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	// bypass the interceptor for the Initialize method
@@ -124,7 +142,7 @@ func (s *Server) doInitializeJsonRpc(ctx context.Context, req *mcp.InitializeReq
 	return mcpSessionId[0], nil
 }
 
-// follows up initialize() with an initialized() call to confirm a session
+// follows up initialize() with an initialized() (notice the past tense) call to confirm a session
 func (s *Server) doInitializedJsonRpc(ctx context.Context, sessionID string) error {
 
 	log.Println("acking MCP session initializaton ...")
