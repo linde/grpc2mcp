@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"grpc2mcp/internal/examplemcp"
 	"grpc2mcp/pb"
 	"log"
 	"strings"
@@ -31,10 +32,11 @@ func doGrpcProxyTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocol
 		return fmt.Errorf("error with ListTools: %w", err)
 	}
 	// this tests our ListTools rpc making sure that our target tools are present
-	// TODO make the trivy server export these somehow, even statically
 	missingTools := []string{}
 targetToolsLoop:
-	for _, target := range []string{"add", "mult", "lower"} {
+	for _, providedTool := range examplemcp.ToolsProvided {
+		target := providedTool.GetName()
+
 		for _, tool := range listToolsResult.Tools {
 			if tool.Name == target {
 				log.Printf("ListTools: found target %s", target)

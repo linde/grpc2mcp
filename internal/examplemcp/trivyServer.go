@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
+// --- Tool Implementations (Add, Mult, Lower) are unchanged ---
 type AddParams struct {
 	A int `json:"a" jsonschema:"the first number"`
 	B int `json:"b" jsonschema:"the second number"`
@@ -56,12 +57,49 @@ func Lower(ctx context.Context, req *mcp.ServerRequest[*mcp.CallToolParamsFor[Lo
 	}, nil
 }
 
-func RunTrivyServer(executableName string) http.Handler {
+type toolRegisterer interface {
+	Register(server *mcp.Server)
+	GetName() string
+}
 
+type toolDefinition[In, Out any] struct {
+	Name        string
+	Description string
+	Handler     mcp.ToolHandlerFor[In, Out]
+}
+
+func (td toolDefinition[In, Out]) Register(server *mcp.Server) {
+	mcp.AddTool(server, &mcp.Tool{Name: td.Name, Description: td.Description}, td.Handler)
+}
+
+func (td toolDefinition[In, Out]) GetName() string {
+	return td.Name
+}
+
+var ToolsProvided []toolRegisterer = []toolRegisterer{
+	toolDefinition[AddParams, any]{
+		Name:        "add",
+		Description: "add two numbers, a and b",
+		Handler:     Add,
+	},
+	toolDefinition[MultParams, any]{
+		Name:        "mult",
+		Description: "multiply two numbers, a and b",
+		Handler:     Mult,
+	},
+	toolDefinition[LowerParams, any]{
+		Name:        "lower",
+		Description: "convert a string, s, to lowercase",
+		Handler:     Lower,
+	},
+}
+
+func RunTrivyServer(executableName string) http.Handler {
 	server := mcp.NewServer(&mcp.Implementation{Name: executableName, Version: "v1.0.0"}, nil)
-	mcp.AddTool(server, &mcp.Tool{Name: "add", Description: "add two numbers"}, Add)
-	mcp.AddTool(server, &mcp.Tool{Name: "mult", Description: "multiply two numbers"}, Mult)
-	mcp.AddTool(server, &mcp.Tool{Name: "lower", Description: "convert a string to lowercase"}, Lower)
+
+	for _, tool := range ToolsProvided {
+		tool.Register(server)
+	}
 
 	handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return server }, nil)
 	return handler
