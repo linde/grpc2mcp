@@ -9,11 +9,12 @@ or point to your favorite other MCP server.
 
 ```bash
 export PORT=8888
+export URI=/
 
 # start initialization
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
-    -H "Content-Type: application/json"  http://localhost:8888/mcp/ \
-     -d @- http://localhost:${PORT}/mcp <<EOF
+    -H "Content-Type: application/json" \
+     -d @- http://localhost:${PORT}${URI} <<EOF
 { 
     "jsonrpc": "2.0", 
     "id": "1", 
@@ -33,21 +34,21 @@ export MCP_SESSION_ID=[get it from above curl call response header]
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
     -H "Content-Type: application/json" \
     -H "mcp-session-id: ${MCP_SESSION_ID}" \
-    -d '{ "jsonrpc": "2.0", "method": "notifications/initialized"}' http://localhost:${PORT}/mcp
+    -d '{ "jsonrpc": "2.0", "method": "notifications/initialized"}' http://localhost:${PORT}${URI}
 
 
 # then, list what's available
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
     -H "Content-Type: application/json" \
     -H "mcp-session-id: ${MCP_SESSION_ID}" \
-    -d '{ "jsonrpc": "2.0", "id": 1, "method": "tools/list"}' http://localhost:${PORT}/mcp
+    -d '{ "jsonrpc": "2.0", "id": 1, "method": "tools/list"}' http://localhost:${PORT}${URI}
 
 # then make tool calls!
 
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
      -H "Content-Type: application/json" \
      -H "mcp-session-id: ${MCP_SESSION_ID}" \
-     -d @- http://localhost:${PORT}/mcp <<EOF
+     -d @- http://localhost:${PORT}${URI} <<EOF
 {
     "jsonrpc": "2.0",
     "id": "1",
