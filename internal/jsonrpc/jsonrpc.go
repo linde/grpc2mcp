@@ -48,28 +48,34 @@ func parseJsonRpcResponseBody(body []byte) (map[string]string, error) {
 	return parsedData, nil
 }
 
-func NewJSONRPCRequest(
-	ctx context.Context, host string, port int, uri string,
+// NewBody creates the body of a JSON-RPC request.
+func NewBody(method string, params any) map[string]any {
+	body := map[string]any{
+		"jsonrpc": "2.0",
+		"method":  method,
+	}
+	if !strings.HasPrefix(method, "notifications/") {
+		body["id"] = rand.Int()
+	}
+	if params != nil {
+		body["params"] = params
+	}
+	return body
+}
+
+func NewJSONRPCRequest(host string, port int, uri string,
 	method string, params proto.Message, additionalHeaders map[string]string,
 ) (*http.Request, error) {
 
-	jsonRPCReq := JSONRPCRequest{
-		JSONRPC: "2.0",
-		Method:  method,
-	}
-
-	if params != nil {
-		jsonRPCReq.Params = params
-		jsonRPCReq.ID = rand.Int()
-	}
-
-	jsonRPCReqBytes, err := json.Marshal(jsonRPCReq)
+	reqBody := NewBody(method, params)
+	jsonRPCReqBytes, err := json.Marshal(reqBody)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to marshal json-rpc request: %v", err)
 	}
 
 	url := fmt.Sprintf("http://%s:%d%s", host, port, uri)
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonRPCReqBytes))
+	httpReq, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(jsonRPCReqBytes))
+
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create http request: %v", err)
 	}
@@ -107,9 +113,10 @@ type JSONRPCError struct {
 }
 
 func GetJSONRPCRequestResponse(ctx context.Context,
-	host string, port int, uri string, method string, paramSrc proto.Message, headers map[string]string) (map[string]string, error) {
+	host string, port int, uri string, method string,
+	paramSrc proto.Message, headers map[string]string) (map[string]string, error) {
 
-	httpReq, err := NewJSONRPCRequest(ctx, host, port, uri, method, paramSrc, nil)
+	httpReq, err := NewJSONRPCRequest(host, port, uri, method, paramSrc, nil)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create http request: %v", err)
 	}
@@ -139,4 +146,34 @@ func GetJSONRPCRequestResponse(ctx context.Context,
 	}
 
 	return jsonRpcResponseParts, nil
+}
+
+// this allows us to leverage different ways to create the http Request, a normal
+// network one or also a mock one for testing. we set headers and deal with the body
+// the same either way in NewJSONRPCRequest()
+type NewHttpRequester func(string, string, io.Reader) *http.Request
+
+// This function consolidates request manipulation for a JSONRPC request. it allows
+// the caller to pass in the request constructor so we can use a mock in tests
+func NewJSONRPCRequest2(url string, method string, params any,
+	additionalHeaders map[string]string, reqFunc NewHttpRequester) (*http.Request, error) {
+
+	// TODO general sessionID into additionalHeaders also return the error
+
+	reqBody := NewBody(method, params)
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("error putting together jsonrpc request: %w", err)
+	}
+
+	req := reqFunc(http.MethodPost, url, bytes.NewReader(bodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+
+	for header, val := range additionalHeaders {
+		req.Header.Set(header, val)
+	}
+
+	return req, nil
 }

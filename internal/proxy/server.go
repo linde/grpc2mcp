@@ -21,6 +21,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
+// TODO move this somewhere neutral so we can use it everywhere, have some straglers
 var MCP_SESSION_ID_HEADER = http.CanonicalHeaderKey("mcp-session-id")
 
 // Server is the gRPC server that implements the ModelContextProtocolServer interface.
@@ -114,11 +115,11 @@ func sessionInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo
 }
 
 // initialize sends the 'initialize' request and synchronously parses the SSE response to get a session ID.
-func (s *Server) doInitializeJsonRpc(ctx context.Context, req *mcp.InitializeRequest) (string, error) {
+func (s *Server) doInitializeJsonRpc(req *mcp.InitializeRequest) (string, error) {
 
 	log.Println("Initializing MCP session...")
 
-	httpReq, err := jsonrpc.NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "initialize", req, nil)
+	httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpHost, s.mcpPort, s.mcpUri, "initialize", req, nil)
 	if err != nil {
 		return "", status.Errorf(codes.Internal, "failed 'initialize' jsonrpc request: %v", err)
 	}
@@ -143,12 +144,12 @@ func (s *Server) doInitializeJsonRpc(ctx context.Context, req *mcp.InitializeReq
 }
 
 // follows up initialize() with an initialized() (notice the past tense) call to confirm a session
-func (s *Server) doInitializedJsonRpc(ctx context.Context, sessionID string) error {
+func (s *Server) doInitializedJsonRpc(sessionID string) error {
 
 	log.Println("acking MCP session initializaton ...")
 
 	sessionHeader := map[string]string{MCP_SESSION_ID_HEADER: sessionID}
-	httpReq, err := jsonrpc.NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "notifications/initialized", nil, sessionHeader)
+	httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpHost, s.mcpPort, s.mcpUri, "notifications/initialized", nil, sessionHeader)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed 'initialized' http request: %v", err)
 	}
@@ -171,11 +172,11 @@ func (s *Server) doInitializedJsonRpc(ctx context.Context, sessionID string) err
 func (s *Server) Initialize(ctx context.Context, req *mcp.InitializeRequest) (*mcp.InitializeResult, error) {
 	log.Println("Initialize called...")
 
-	sessionID, err := s.doInitializeJsonRpc(ctx, req)
+	sessionID, err := s.doInitializeJsonRpc(req)
 	if err != nil || sessionID == "" {
 		return nil, status.Errorf(codes.Internal, "failed to initialize MCP session: %v", err)
 	}
-	if err := s.doInitializedJsonRpc(ctx, sessionID); err != nil {
+	if err := s.doInitializedJsonRpc(sessionID); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to ack MCP session initialization: %v", err)
 	}
 

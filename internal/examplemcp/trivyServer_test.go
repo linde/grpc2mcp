@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"grpc2mcp/internal/jsonrpc"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -17,25 +18,19 @@ func setupSession(t *testing.T, handler http.Handler) string {
 	assert := assert.New(t)
 
 	// 1. Initialize
-	initReqBody := map[string]any{
-		"jsonrpc": "2.0",
-		"id":      1,
-		"method":  "initialize",
-		"params": map[string]any{
-			"protocolVersion": "2025-06-18",
-			"capabilities":    map[string]any{},
-			"clientInfo": map[string]any{
-				"name":    "go-test",
-				"version": "1.0",
-			},
+	initParams := map[string]any{
+		"protocolVersion": "2025-06-18",
+		"capabilities":    map[string]any{},
+		"clientInfo": map[string]any{
+			"name":    "go-test",
+			"version": "1.0",
 		},
 	}
-	initBodyBytes, err := json.Marshal(initReqBody)
+
+	addlHeaders := map[string]string{} // no headers
+	initReq, err := jsonrpc.NewJSONRPCRequest2("/", "initialize", initParams, addlHeaders, httptest.NewRequest)
 	assert.NoError(err)
 
-	initReq := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(initBodyBytes))
-	initReq.Header.Set("Content-Type", "application/json")
-	initReq.Header.Set("Accept", "application/json, text/event-stream")
 	initRR := httptest.NewRecorder()
 	handler.ServeHTTP(initRR, initReq)
 	assert.Equal(http.StatusOK, initRR.Code)
@@ -44,17 +39,10 @@ func setupSession(t *testing.T, handler http.Handler) string {
 	assert.NotEmpty(sessionID)
 
 	// 2. Initialized
-	initializedReqBody := map[string]any{
-		"jsonrpc": "2.0",
-		"method":  "notifications/initialized",
-	}
-	initializedBodyBytes, err := json.Marshal(initializedReqBody)
+	addlHeaders = map[string]string{"Mcp-Session-Id": sessionID}
+	initializedReq, err := jsonrpc.NewJSONRPCRequest2("/", "notifications/initialized", nil, addlHeaders, httptest.NewRequest)
 	assert.NoError(err)
 
-	initializedReq := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(initializedBodyBytes))
-	initializedReq.Header.Set("Content-Type", "application/json")
-	initializedReq.Header.Set("Accept", "application/json, text/event-stream")
-	initializedReq.Header.Set("Mcp-Session-Id", sessionID)
 	initializedRR := httptest.NewRecorder()
 	handler.ServeHTTP(initializedRR, initializedReq)
 	assert.Equal(http.StatusAccepted, initializedRR.Code)
@@ -101,24 +89,12 @@ func TestTrivyServerTools(t *testing.T) {
 				"arguments": tc.input,
 			}
 
-			reqBody := map[string]any{
-				"jsonrpc": "2.0",
-				"method":  "tools/call",
-				"params":  params,
-				"id":      1,
-			}
-
-			bodyBytes, err := json.Marshal(reqBody)
+			addlHeaders := map[string]string{"Mcp-Session-Id": sessionID}
+			req, err := jsonrpc.NewJSONRPCRequest2("/", "tools/call", params, addlHeaders, httptest.NewRequest)
 			assert.NoError(err)
 
-			req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(bodyBytes))
-			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("Accept", "application/json, text/event-stream")
-			req.Header.Set("Mcp-Session-Id", sessionID)
 			rr := httptest.NewRecorder()
-
 			handler.ServeHTTP(rr, req)
-
 			assert.Equal(http.StatusOK, rr.Code)
 
 			respBody, err := io.ReadAll(rr.Body)
