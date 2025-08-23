@@ -16,7 +16,7 @@ import (
 
 func doGrpcProxyTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) error {
 
-	sessionCtx, err := doInitialize(ctx, mcpGrpcClient)
+	sessionCtx, err := doMcpInitialize(ctx, mcpGrpcClient)
 	if err != nil {
 		return fmt.Errorf("error with initiailization: %w", err)
 	}
@@ -54,7 +54,7 @@ targetToolsLoop:
 
 func doGrpcProxyToolTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) error {
 
-	sessionCtx, err := doInitialize(ctx, mcpGrpcClient)
+	sessionCtx, err := doMcpInitialize(ctx, mcpGrpcClient)
 	if err != nil {
 		return fmt.Errorf("error making NewStruct: %v", err)
 	}

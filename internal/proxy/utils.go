@@ -49,23 +49,24 @@ func RunServerAsync(handler http.Handler) (net.Listener, context.CancelFunc, err
 	return listener, cancel, nil
 }
 
-// this function returns a cancel function for a list of shutdown funcs
-func getShutdownFuncForList(shutdownFuncs []func()) func() {
-	return func() {
-		for _, f := range shutdownFuncs {
-			f()
+func SetupAsyncMcpAndProxy(mcpServerName string) (pb.ModelContextProtocolClient, func(), error) {
+
+	accumulatedCancelFuncs := make([]func(), 3)
+	aggregateCancelFunc := func() {
+		log.Printf("shutting down mcp server and grpc proxy")
+		for _, f := range accumulatedCancelFuncs {
+			if f != nil {
+				f()
+			}
 		}
 	}
-}
-
-func SetupMcpAndProxyAsync(mcpServerName string) (*grpc.ClientConn, func(), error) {
 
 	handler := examplemcp.RunTrivyServer(mcpServerName)
 	mcpListener, trivyServerCancelFunc, err := RunServerAsync(handler)
-	shutdownFuncs := []func(){trivyServerCancelFunc}
 	if err != nil {
-		return nil, getShutdownFuncForList(shutdownFuncs), fmt.Errorf("error setting up proxy in SetupMcpAndProxy: %w", err)
+		return nil, aggregateCancelFunc, fmt.Errorf("error setting up proxy in SetupMcpAndProxy: %w", err)
 	}
+	accumulatedCancelFuncs = append(accumulatedCancelFuncs, trivyServerCancelFunc)
 
 	// TODO figure out getting an IP from net.TCPAddr better, for now assume 0.0.0.0
 	mcpTcpAddr, _ := mcpListener.Addr().(*net.TCPAddr)
@@ -73,24 +74,27 @@ func SetupMcpAndProxyAsync(mcpServerName string) (*grpc.ClientConn, func(), erro
 	log.Printf("mcp handler listening on: %s:%d", host, port)
 	s, err := NewServer(host, port, "/")
 	if err != nil {
-		return nil, getShutdownFuncForList(shutdownFuncs), fmt.Errorf("failed to create proxy server: %w", err)
+		return nil, aggregateCancelFunc, fmt.Errorf("failed to create proxy server: %w", err)
 	}
 
 	proxyTcpAddr, proxyCancelFunc, err := s.StartAsync(0) // let system find open port
-	shutdownFuncs = append(shutdownFuncs, proxyCancelFunc)
+	accumulatedCancelFuncs = append(accumulatedCancelFuncs, proxyCancelFunc)
 	if err != nil {
-		return nil, getShutdownFuncForList(shutdownFuncs), fmt.Errorf("failed to start proxy server: %w", err)
+		return nil, aggregateCancelFunc, fmt.Errorf("failed to start proxy server: %w", err)
 	}
 
 	log.Printf("mcp grpc proxy listening on: %s", proxyTcpAddr)
 
 	// put together a client and return it to the caller
 	newClient, newClientErr := grpc.NewClient(proxyTcpAddr.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	return newClient, getShutdownFuncForList(shutdownFuncs), newClientErr
+
+	mcpGrpcClient := pb.NewModelContextProtocolClient(newClient)
+
+	return mcpGrpcClient, aggregateCancelFunc, newClientErr
 
 }
 
-func doInitialize(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) (context.Context, error) {
+func doMcpInitialize(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) (context.Context, error) {
 
 	var sessionHeader metadata.MD
 	_, err := mcpGrpcClient.Initialize(ctx, &pb.InitializeRequest{}, grpc.Header(&sessionHeader))

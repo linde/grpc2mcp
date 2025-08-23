@@ -71,7 +71,7 @@ func (s *Server) StartAsync(port int) (*net.TCPAddr, context.CancelFunc, error) 
 }
 
 // StartProxyToListenerAsync starts the gRPC server in its own goroutine. returns a func to shut it down.
-func (s *Server) StartProxyToListenerAsync(lis net.Listener) (context.CancelFunc, error) {
+func (s *Server) StartProxyToListenerAsync(lis net.Listener) (func(), error) {
 
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(sessionInterceptor),

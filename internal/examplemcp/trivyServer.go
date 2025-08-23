@@ -94,6 +94,7 @@ var ToolsProvided []toolRegisterer = []toolRegisterer{
 	},
 }
 
+// TODO should we be able to specify the URI? ie /mcp
 func RunTrivyServer(executableName string) http.Handler {
 	server := mcp.NewServer(&mcp.Implementation{Name: executableName, Version: "v1.0.0"}, nil)
 
