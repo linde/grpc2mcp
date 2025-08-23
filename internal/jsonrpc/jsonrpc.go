@@ -88,11 +88,10 @@ type JSONRPCError struct {
 	Data    any    `json:"data,omitempty"`
 }
 
-func GetJSONRPCRequestResponse(ctx context.Context,
-	host string, port int, uri string, method mcpconst.JsonRpcMethod,
-	paramSrc proto.Message, headers map[string]string) (map[string]string, error) {
+func GetJSONRPCRequestResponse(ctx context.Context, url string,
+	method mcpconst.JsonRpcMethod, paramSrc proto.Message,
+	headers map[string]string) (map[string]string, error) {
 
-	url := fmt.Sprintf("http://%s:%d%s", host, port, uri)
 	additionalHeaders := map[string]string{}
 	httpReq, err := NewJSONRPCRequest(url, method, paramSrc, additionalHeaders, http.NewRequest)
 	if err != nil {

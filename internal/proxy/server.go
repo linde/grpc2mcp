@@ -43,6 +43,11 @@ func NewServer(mcpHost string, mcpPort int, mcpUri string) (*Server, error) {
 	return s, nil
 }
 
+func (s *Server) Url() string {
+	return fmt.Sprintf("http://%s:%d%s", s.mcpHost, s.mcpPort, s.mcpUri)
+
+}
+
 // Start starts the gRPC server in its own goroutine. returns a func to shut it down.
 func (s *Server) StartAsync(port int) (*net.TCPAddr, context.CancelFunc, error) {
 
@@ -117,9 +122,8 @@ func (s *Server) doInitializeJsonRpc(req *mcp.InitializeRequest) (string, error)
 
 	log.Println("Initializing MCP session...")
 
-	url := fmt.Sprintf("http://%s:%d%s", s.mcpHost, s.mcpPort, s.mcpUri)
 	additionalHeaders := map[string]string{}
-	httpReq, err := jsonrpc.NewJSONRPCRequest(url, "initialize", req, additionalHeaders, http.NewRequest)
+	httpReq, err := jsonrpc.NewJSONRPCRequest(s.Url(), "initialize", req, additionalHeaders, http.NewRequest)
 
 	// httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpHost, s.mcpPort, s.mcpUri, "initialize", req, additionalHeaders)
 	if err != nil {
@@ -151,9 +155,8 @@ func (s *Server) doInitializedJsonRpc(sessionID string) error {
 	log.Println("acking MCP session initializaton ...")
 
 	// httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpHost, s.mcpPort, s.mcpUri, "notifications/initialized", nil, sessionHeader)
-	url := fmt.Sprintf("http://%s:%d%s", s.mcpHost, s.mcpPort, s.mcpUri)
 	sessionHeader := map[string]string{mcpconst.MCP_SESSION_ID_HEADER: sessionID}
-	httpReq, err := jsonrpc.NewJSONRPCRequest(url, "notifications/initialized", nil, sessionHeader, http.NewRequest)
+	httpReq, err := jsonrpc.NewJSONRPCRequest(s.Url(), "notifications/initialized", nil, sessionHeader, http.NewRequest)
 
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed 'initialized' http request: %v", err)
@@ -245,7 +248,7 @@ func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage,
 	}
 
 	headers := map[string]string{mcpconst.MCP_SESSION_ID_HEADER: sessionID}
-	jsonRpcResponseParts, err := jsonrpc.GetJSONRPCRequestResponse(ctx, s.mcpHost, s.mcpPort, s.mcpUri, jsonRpcMethod, req, headers)
+	jsonRpcResponseParts, err := jsonrpc.GetJSONRPCRequestResponse(ctx, s.Url(), jsonRpcMethod, req, headers)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
 	}
