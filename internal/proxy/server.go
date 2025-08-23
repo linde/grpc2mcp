@@ -230,13 +230,14 @@ func (s *Server) Ping(ctx context.Context, req *mcp.PingRequest) (*mcp.PingResul
 	log.Printf("Ping requested: %v", req)
 
 	var result mcp.PingResult
-	err := s.doRpcCall(ctx, req, "ping", &result)
+	err := s.doRpcCall(ctx, req, mcpconst.Ping, &result)
 
 	return &result, err
 }
 
 // This is the heart of doing a session jsonrpc call and unpacking, then deserializing the result.
-func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage, method string, rpcResultPtr any) error {
+func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage,
+	jsonRpcMethod mcpconst.JsonRpcMethod, rpcResultPtr any) error {
 
 	sessionID, ok := ctx.Value(mcpconst.MCP_SESSION_ID_HEADER).(string)
 	if !ok {
@@ -244,7 +245,7 @@ func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage, m
 	}
 
 	headers := map[string]string{mcpconst.MCP_SESSION_ID_HEADER: sessionID}
-	jsonRpcResponseParts, err := jsonrpc.GetJSONRPCRequestResponse(ctx, s.mcpHost, s.mcpPort, s.mcpUri, method, req, headers)
+	jsonRpcResponseParts, err := jsonrpc.GetJSONRPCRequestResponse(ctx, s.mcpHost, s.mcpPort, s.mcpUri, jsonRpcMethod, req, headers)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
 	}

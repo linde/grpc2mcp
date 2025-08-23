@@ -33,7 +33,7 @@ func setupSession(t *testing.T, handler http.Handler) string {
 	}
 
 	addlHeaders := map[string]string{} // no headers
-	initReq, err := jsonrpc.NewJSONRPCRequest("/", "initialize",
+	initReq, err := jsonrpc.NewJSONRPCRequest("/", mcpconst.Initialize,
 		initParams, addlHeaders, testNewRequester)
 	assert.NoError(err)
 
@@ -47,7 +47,7 @@ func setupSession(t *testing.T, handler http.Handler) string {
 	// 2. Initialized
 	addlHeaders = map[string]string{mcpconst.MCP_SESSION_ID_HEADER: sessionID}
 	initializedReq, err := jsonrpc.NewJSONRPCRequest("/",
-		"notifications/initialized", nil, addlHeaders, testNewRequester)
+		mcpconst.NotificationsInitialized, nil, addlHeaders, testNewRequester)
 	assert.NoError(err)
 
 	initializedRR := httptest.NewRecorder()
@@ -97,7 +97,7 @@ func TestTrivyServerTools(t *testing.T) {
 			}
 
 			addlHeaders := map[string]string{mcpconst.MCP_SESSION_ID_HEADER: sessionID}
-			req, err := jsonrpc.NewJSONRPCRequest("/", "tools/call", params,
+			req, err := jsonrpc.NewJSONRPCRequest("/", mcpconst.ToolsCall, params,
 				addlHeaders, testNewRequester)
 			assert.NoError(err)
 

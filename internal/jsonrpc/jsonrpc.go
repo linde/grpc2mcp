@@ -11,6 +11,8 @@ import (
 	"net/http"
 	"strings"
 
+	"grpc2mcp/internal/mcpconst"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -49,12 +51,12 @@ func parseJsonRpcResponseBody(body []byte) (map[string]string, error) {
 }
 
 // NewBody creates the body of a JSON-RPC request.
-func NewBody(method string, params any) map[string]any {
+func NewBody(method mcpconst.JsonRpcMethod, params any) map[string]any {
 	body := map[string]any{
 		"jsonrpc": "2.0",
 		"method":  method,
 	}
-	if !strings.HasPrefix(method, "notifications/") {
+	if !strings.HasPrefix(string(method), "notifications/") {
 		body["id"] = rand.Int()
 	}
 	if params != nil {
@@ -87,7 +89,7 @@ type JSONRPCError struct {
 }
 
 func GetJSONRPCRequestResponse(ctx context.Context,
-	host string, port int, uri string, method string,
+	host string, port int, uri string, method mcpconst.JsonRpcMethod,
 	paramSrc proto.Message, headers map[string]string) (map[string]string, error) {
 
 	url := fmt.Sprintf("http://%s:%d%s", host, port, uri)
@@ -131,12 +133,12 @@ type NewHttpRequester func(method string, url string, body io.Reader) (*http.Req
 
 // This function consolidates request manipulation for a JSONRPC request. it allows
 // the caller to pass in the request constructor so we can use a mock in tests
-func NewJSONRPCRequest(url string, method string, params any,
+func NewJSONRPCRequest(url string, jsonRpcMethod mcpconst.JsonRpcMethod, params any,
 	additionalHeaders map[string]string, reqFunc NewHttpRequester) (*http.Request, error) {
 
 	// TODO general sessionID into additionalHeaders also return the error
 
-	reqBody := NewBody(method, params)
+	reqBody := NewBody(jsonRpcMethod, params)
 
 	bodyBytes, err := json.Marshal(reqBody)
 	if err != nil {
