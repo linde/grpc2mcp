@@ -25,10 +25,9 @@ var MCP_SESSION_ID_HEADER = http.CanonicalHeaderKey("mcp-session-id")
 // Server is the gRPC server that implements the ModelContextProtocolServer interface.
 type Server struct {
 	mcp.UnimplementedModelContextProtocolServer
-	mcpHost string
-	mcpPort int
-	mcpUri  string
-	// sessionID  string
+	mcpHost    string
+	mcpPort    int
+	mcpUri     string
 	httpClient *http.Client
 }
 
@@ -38,7 +37,7 @@ func NewServer(mcpHost string, mcpPort int, mcpUri string) (*Server, error) {
 		mcpHost:    mcpHost,
 		mcpPort:    mcpPort,
 		mcpUri:     mcpUri,
-		httpClient: &http.Client{}, // TODO why is this shared?
+		httpClient: &http.Client{}, // this seems needed by grpc,
 	}
 
 	return s, nil
