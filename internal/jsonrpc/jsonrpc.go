@@ -1,4 +1,4 @@
-package proxy
+package jsonrpc
 
 import (
 	"bufio"
@@ -106,7 +106,7 @@ type JSONRPCError struct {
 	Data    any    `json:"data,omitempty"`
 }
 
-func getJSONRPCRequestResponse(ctx context.Context,
+func GetJSONRPCRequestResponse(ctx context.Context,
 	host string, port int, uri string, method string, paramSrc proto.Message, headers map[string]string) (map[string]string, error) {
 
 	httpReq, err := NewJSONRPCRequest(ctx, host, port, uri, method, paramSrc, nil)

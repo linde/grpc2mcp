@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 
+	"grpc2mcp/internal/jsonrpc"
 	mcp "grpc2mcp/pb"
 
 	"google.golang.org/grpc"
@@ -117,7 +118,7 @@ func (s *Server) doInitializeJsonRpc(ctx context.Context, req *mcp.InitializeReq
 
 	log.Println("Initializing MCP session...")
 
-	httpReq, err := NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "initialize", req, nil)
+	httpReq, err := jsonrpc.NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "initialize", req, nil)
 	if err != nil {
 		return "", status.Errorf(codes.Internal, "failed 'initialize' jsonrpc request: %v", err)
 	}
@@ -147,7 +148,7 @@ func (s *Server) doInitializedJsonRpc(ctx context.Context, sessionID string) err
 	log.Println("acking MCP session initializaton ...")
 
 	sessionHeader := map[string]string{MCP_SESSION_ID_HEADER: sessionID}
-	httpReq, err := NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "notifications/initialized", nil, sessionHeader)
+	httpReq, err := jsonrpc.NewJSONRPCRequest(ctx, s.mcpHost, s.mcpPort, s.mcpUri, "notifications/initialized", nil, sessionHeader)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed 'initialized' http request: %v", err)
 	}
@@ -237,12 +238,12 @@ func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage, m
 	}
 
 	headers := map[string]string{MCP_SESSION_ID_HEADER: sessionID}
-	jsonRpcResponseParts, err := getJSONRPCRequestResponse(ctx, s.mcpHost, s.mcpPort, s.mcpUri, method, req, headers)
+	jsonRpcResponseParts, err := jsonrpc.GetJSONRPCRequestResponse(ctx, s.mcpHost, s.mcpPort, s.mcpUri, method, req, headers)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
 	}
 
-	var jsonRPCResp JSONRPCResponse
+	var jsonRPCResp jsonrpc.JSONRPCResponse
 	if err := json.Unmarshal([]byte(jsonRpcResponseParts["data"]), &jsonRPCResp); err != nil {
 		return status.Errorf(codes.Internal, "failed to unmarshal mcp server response: %v", err)
 	}
