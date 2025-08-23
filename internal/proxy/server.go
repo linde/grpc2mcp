@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"grpc2mcp/internal/jsonrpc"
+	"grpc2mcp/internal/mcpconst"
 	mcp "grpc2mcp/pb"
 
 	"google.golang.org/grpc"
@@ -20,9 +21,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
-
-// TODO move this somewhere neutral so we can use it everywhere, have some straglers
-var MCP_SESSION_ID_HEADER = http.CanonicalHeaderKey("mcp-session-id")
 
 // Server is the gRPC server that implements the ModelContextProtocolServer interface.
 type Server struct {
@@ -89,7 +87,7 @@ func (s *Server) StartProxyToListenerAsync(lis net.Listener) (func(), error) {
 	return grpcServer.GracefulStop, nil
 }
 
-// sessionInterceptor is a gRPC unary interceptor that checks for the mcp-session-id header.
+// sessionInterceptor is a gRPC unary interceptor that checks for the MCP_SESSION_ID_HEADER header.
 func sessionInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	// bypass the interceptor for the Initialize method
 	if strings.HasSuffix(info.FullMethod, "Initialize") {
@@ -101,15 +99,15 @@ func sessionInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo
 		return nil, status.Errorf(codes.InvalidArgument, "missing metadata")
 	}
 
-	sessionID := md.Get(MCP_SESSION_ID_HEADER)
+	sessionID := md.Get(mcpconst.MCP_SESSION_ID_HEADER)
 	if len(sessionID) == 0 {
-		return nil, status.Errorf(codes.Unauthenticated, "missing mcp-session-id header")
+		return nil, status.Errorf(codes.Unauthenticated, "missing header: %s", mcpconst.MCP_SESSION_ID_HEADER)
 	}
 
 	// The session ID is valid, so we can proceed with the request.
 	// Before we do, let's add the session ID to the context so that the
 	// RPC handlers can access it.
-	ctx = context.WithValue(ctx, MCP_SESSION_ID_HEADER, sessionID[0])
+	ctx = context.WithValue(ctx, mcpconst.MCP_SESSION_ID_HEADER, sessionID[0])
 
 	return handler(ctx, req)
 }
@@ -139,9 +137,9 @@ func (s *Server) doInitializeJsonRpc(req *mcp.InitializeRequest) (string, error)
 		return "", fmt.Errorf("initialize request failed with status %d: %s", httpResp.StatusCode, string(body))
 	}
 
-	mcpSessionId, ok := httpResp.Header[MCP_SESSION_ID_HEADER]
+	mcpSessionId, ok := httpResp.Header[mcpconst.MCP_SESSION_ID_HEADER]
 	if !ok || len(mcpSessionId) < 1 {
-		return "", fmt.Errorf("did not find MCP Session ID header: %s", MCP_SESSION_ID_HEADER)
+		return "", fmt.Errorf("did not find MCP Session ID header: %s", mcpconst.MCP_SESSION_ID_HEADER)
 	}
 
 	return mcpSessionId[0], nil
@@ -154,7 +152,7 @@ func (s *Server) doInitializedJsonRpc(sessionID string) error {
 
 	// httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpHost, s.mcpPort, s.mcpUri, "notifications/initialized", nil, sessionHeader)
 	url := fmt.Sprintf("http://%s:%d%s", s.mcpHost, s.mcpPort, s.mcpUri)
-	sessionHeader := map[string]string{MCP_SESSION_ID_HEADER: sessionID}
+	sessionHeader := map[string]string{mcpconst.MCP_SESSION_ID_HEADER: sessionID}
 	httpReq, err := jsonrpc.NewJSONRPCRequest(url, "notifications/initialized", nil, sessionHeader, http.NewRequest)
 
 	if err != nil {
@@ -188,7 +186,7 @@ func (s *Server) Initialize(ctx context.Context, req *mcp.InitializeRequest) (*m
 	}
 
 	// Set the session ID in the response header
-	if err := grpc.SetHeader(ctx, metadata.Pairs(MCP_SESSION_ID_HEADER, sessionID)); err != nil {
+	if err := grpc.SetHeader(ctx, metadata.Pairs(mcpconst.MCP_SESSION_ID_HEADER, sessionID)); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to set session ID in header: %v", err)
 	}
 
@@ -240,12 +238,12 @@ func (s *Server) Ping(ctx context.Context, req *mcp.PingRequest) (*mcp.PingResul
 // This is the heart of doing a session jsonrpc call and unpacking, then deserializing the result.
 func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage, method string, rpcResultPtr any) error {
 
-	sessionID, ok := ctx.Value(MCP_SESSION_ID_HEADER).(string)
+	sessionID, ok := ctx.Value(mcpconst.MCP_SESSION_ID_HEADER).(string)
 	if !ok {
-		return status.Errorf(codes.Internal, "could not get session id (%s) from context", MCP_SESSION_ID_HEADER)
+		return status.Errorf(codes.Internal, "could not get session id (%s) from context", mcpconst.MCP_SESSION_ID_HEADER)
 	}
 
-	headers := map[string]string{MCP_SESSION_ID_HEADER: sessionID}
+	headers := map[string]string{mcpconst.MCP_SESSION_ID_HEADER: sessionID}
 	jsonRpcResponseParts, err := jsonrpc.GetJSONRPCRequestResponse(ctx, s.mcpHost, s.mcpPort, s.mcpUri, method, req, headers)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"grpc2mcp/internal/jsonrpc"
+	"grpc2mcp/internal/mcpconst"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -40,11 +41,11 @@ func setupSession(t *testing.T, handler http.Handler) string {
 	handler.ServeHTTP(initRR, initReq)
 	assert.Equal(http.StatusOK, initRR.Code)
 
-	sessionID := initRR.Header().Get("Mcp-Session-Id")
+	sessionID := initRR.Header().Get(mcpconst.MCP_SESSION_ID_HEADER)
 	assert.NotEmpty(sessionID)
 
 	// 2. Initialized
-	addlHeaders = map[string]string{"Mcp-Session-Id": sessionID}
+	addlHeaders = map[string]string{mcpconst.MCP_SESSION_ID_HEADER: sessionID}
 	initializedReq, err := jsonrpc.NewJSONRPCRequest("/",
 		"notifications/initialized", nil, addlHeaders, testNewRequester)
 	assert.NoError(err)
@@ -95,7 +96,7 @@ func TestTrivyServerTools(t *testing.T) {
 				"arguments": tc.input,
 			}
 
-			addlHeaders := map[string]string{"Mcp-Session-Id": sessionID}
+			addlHeaders := map[string]string{mcpconst.MCP_SESSION_ID_HEADER: sessionID}
 			req, err := jsonrpc.NewJSONRPCRequest("/", "tools/call", params,
 				addlHeaders, testNewRequester)
 			assert.NoError(err)

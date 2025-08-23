@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"grpc2mcp/internal/examplemcp"
+	"grpc2mcp/internal/mcpconst"
 	"grpc2mcp/pb"
 
 	"log"
@@ -102,9 +103,9 @@ func doMcpInitialize(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolC
 		return nil, fmt.Errorf("error making Initialize grpc call: %w", err)
 	}
 
-	mcpSessionId := sessionHeader.Get(MCP_SESSION_ID_HEADER)
+	mcpSessionId := sessionHeader.Get(mcpconst.MCP_SESSION_ID_HEADER)
 	if len(mcpSessionId) < 1 {
-		errStr := fmt.Sprintf("did not receive mcp session id: %s", MCP_SESSION_ID_HEADER)
+		errStr := fmt.Sprintf("did not receive mcp session id: %s", mcpconst.MCP_SESSION_ID_HEADER)
 		return nil, errors.New(errStr)
 	}
 	clientCtx := metadata.NewOutgoingContext(context.Background(), sessionHeader)
