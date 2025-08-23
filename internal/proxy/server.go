@@ -119,7 +119,11 @@ func (s *Server) doInitializeJsonRpc(req *mcp.InitializeRequest) (string, error)
 
 	log.Println("Initializing MCP session...")
 
-	httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpHost, s.mcpPort, s.mcpUri, "initialize", req, nil)
+	url := fmt.Sprintf("http://%s:%d%s", s.mcpHost, s.mcpPort, s.mcpUri)
+	additionalHeaders := map[string]string{}
+	httpReq, err := jsonrpc.NewJSONRPCRequest(url, "initialize", req, additionalHeaders, http.NewRequest)
+
+	// httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpHost, s.mcpPort, s.mcpUri, "initialize", req, additionalHeaders)
 	if err != nil {
 		return "", status.Errorf(codes.Internal, "failed 'initialize' jsonrpc request: %v", err)
 	}
@@ -148,8 +152,11 @@ func (s *Server) doInitializedJsonRpc(sessionID string) error {
 
 	log.Println("acking MCP session initializaton ...")
 
+	// httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpHost, s.mcpPort, s.mcpUri, "notifications/initialized", nil, sessionHeader)
+	url := fmt.Sprintf("http://%s:%d%s", s.mcpHost, s.mcpPort, s.mcpUri)
 	sessionHeader := map[string]string{MCP_SESSION_ID_HEADER: sessionID}
-	httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpHost, s.mcpPort, s.mcpUri, "notifications/initialized", nil, sessionHeader)
+	httpReq, err := jsonrpc.NewJSONRPCRequest(url, "notifications/initialized", nil, sessionHeader, http.NewRequest)
+
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed 'initialized' http request: %v", err)
 	}

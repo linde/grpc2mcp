@@ -14,6 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func testNewRequester(method string, url string, body io.Reader) (*http.Request, error) {
+	return httptest.NewRequest(method, url, body), nil
+}
+
 func setupSession(t *testing.T, handler http.Handler) string {
 	assert := assert.New(t)
 
@@ -28,7 +32,8 @@ func setupSession(t *testing.T, handler http.Handler) string {
 	}
 
 	addlHeaders := map[string]string{} // no headers
-	initReq, err := jsonrpc.NewJSONRPCRequest2("/", "initialize", initParams, addlHeaders, httptest.NewRequest)
+	initReq, err := jsonrpc.NewJSONRPCRequest("/", "initialize",
+		initParams, addlHeaders, testNewRequester)
 	assert.NoError(err)
 
 	initRR := httptest.NewRecorder()
@@ -40,7 +45,8 @@ func setupSession(t *testing.T, handler http.Handler) string {
 
 	// 2. Initialized
 	addlHeaders = map[string]string{"Mcp-Session-Id": sessionID}
-	initializedReq, err := jsonrpc.NewJSONRPCRequest2("/", "notifications/initialized", nil, addlHeaders, httptest.NewRequest)
+	initializedReq, err := jsonrpc.NewJSONRPCRequest("/",
+		"notifications/initialized", nil, addlHeaders, testNewRequester)
 	assert.NoError(err)
 
 	initializedRR := httptest.NewRecorder()
@@ -90,7 +96,8 @@ func TestTrivyServerTools(t *testing.T) {
 			}
 
 			addlHeaders := map[string]string{"Mcp-Session-Id": sessionID}
-			req, err := jsonrpc.NewJSONRPCRequest2("/", "tools/call", params, addlHeaders, httptest.NewRequest)
+			req, err := jsonrpc.NewJSONRPCRequest("/", "tools/call", params,
+				addlHeaders, testNewRequester)
 			assert.NoError(err)
 
 			rr := httptest.NewRecorder()
