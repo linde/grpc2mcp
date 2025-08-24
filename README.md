@@ -29,17 +29,17 @@ go run main.go proxy [flags]
 
 ### Flags
 
-*   `--port`: The port for the gRPC proxy to listen on (default: `8080`).
-*   `--mcp-host`: The hostname of the downstream MCP server (default: `localhost`).
-*   `--mcp-port`: The port of the downstream MCP server (default: `8888`).
-*   `--mcp-uri`: The URI path for the MCP server endpoint (default: `/mcp/`).
+*  `--port`: The port for the gRPC proxy to listen on (default: `8080`).
+*  `--mcp-url`: The url for the MCP server to connect to (default: `http://localhost:8888/mcp/`).
 
 ### Example
 
-To start the proxy and have it connect to the example MCP server running on `localhost:8888`, you would run:
+To start the proxy and have it connect to the example MCP server reachable at 
+`http://localhost:8888/mcp/`, you would run:
+
 
 ```bash
-go run main.go proxy --port 8080 --mcp-host localhost --mcp-port 8888
+go run main.go proxy --port 8080 --mcp-url http://localhost:8888/mcp/
 ```
 
 ### Example Usage with `grpcurl`
@@ -95,4 +95,15 @@ EOF
 
 # and finally ping
 grpcurl -v -H "${MCP_SESSION_HEADER}" -plaintext localhost:8080 mcp.ModelContextProtocol/Ping
+```
+
+### Example with github's MCP server
+
+
+```bash
+
+export GITHUB_PAT=[your token]
+grpcurl -v -plaintext -H "Authorization: Bearer ${GITHUB_PAT}"   https://api.githubcopilot.com:443/mcp/    mcp.ModelContextProtocol/Initialize
+
+
 ```

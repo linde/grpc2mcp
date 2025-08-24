@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"fmt"
 	"grpc2mcp/internal/examplemcp"
 	"grpc2mcp/pb"
 	"log"
@@ -26,14 +27,14 @@ func TestBufconDirect(t *testing.T) {
 
 	// TODO figure out getting an IP from net.TCPAddr better, for now assume 0.0.0.0
 	mcpTcpAddr, _ := mcpListener.Addr().(*net.TCPAddr)
-	host, port := "0.0.0.0", mcpTcpAddr.Port
-	log.Printf("mcp handler listening on: %s:%d", host, port)
+	mcpUrl := fmt.Sprintf("http://0.0.0.0:%d/", mcpTcpAddr.Port)
+	log.Printf("mcp handler listening on: %s", mcpUrl)
 
 	const bufSize = 1024 * 1024
 	lis := bufconn.Listen(bufSize)
 
 	// TODO create our own exampleMCP inst
-	s, err := NewServer(host, port, "/")
+	s, err := NewServer(mcpUrl)
 	assert.NoError(err)
 
 	serverCancel, err := s.StartProxyToListenerAsync(lis)

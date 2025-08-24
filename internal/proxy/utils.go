@@ -71,9 +71,9 @@ func SetupAsyncMcpAndProxy(mcpServerName string) (pb.ModelContextProtocolClient,
 
 	// TODO figure out getting an IP from net.TCPAddr better, for now assume 0.0.0.0
 	mcpTcpAddr, _ := mcpListener.Addr().(*net.TCPAddr)
-	host, port := "0.0.0.0", mcpTcpAddr.Port
-	log.Printf("mcp handler listening on: %s:%d", host, port)
-	s, err := NewServer(host, port, "/")
+	mcpUrl := fmt.Sprintf("http://0.0.0.0:%d/", mcpTcpAddr.Port)
+	log.Printf("mcp handler listening on: %s", mcpUrl)
+	s, err := NewServer(mcpUrl)
 	if err != nil {
 		return nil, aggregateCancelFunc, fmt.Errorf("failed to create proxy server: %w", err)
 	}

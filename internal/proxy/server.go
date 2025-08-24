@@ -22,30 +22,24 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
+type mcpSession struct {
+	sessionID string
+}
+
 // Server is the gRPC server that implements the ModelContextProtocolServer interface.
 type Server struct {
-	mcp.UnimplementedModelContextProtocolServer
-	mcpHost    string
-	mcpPort    int
-	mcpUri     string
-	httpClient *http.Client
+	mcpUrl     string
+	httpClient http.Client
 }
 
-// NewServer creates a new Server and initializes a session with the downstream MCP server.
-func NewServer(mcpHost string, mcpPort int, mcpUri string) (*Server, error) {
-	s := &Server{
-		mcpHost:    mcpHost,
-		mcpPort:    mcpPort,
-		mcpUri:     mcpUri,
-		httpClient: &http.Client{}, // this seems needed by grpc,
-	}
-
-	return s, nil
+func (s *Server) getMcpUrl() string {
+	return s.mcpUrl
 }
 
-func (s *Server) Url() string {
-	return fmt.Sprintf("http://%s:%d%s", s.mcpHost, s.mcpPort, s.mcpUri)
-
+func NewServer(mcpUrl string) (*Server, error) {
+	return &Server{
+		mcpUrl: mcpUrl,
+	}, nil
 }
 
 // Start starts the gRPC server in its own goroutine. returns a func to shut it down.
@@ -114,18 +108,44 @@ func sessionInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo
 	// RPC handlers can access it.
 	ctx = context.WithValue(ctx, mcpconst.MCP_SESSION_ID_HEADER, sessionID[0])
 
+	// likewise, let's pass through any Authorization headers because they're intended for
+	// the downstream MCP server (ie as opposed to our service which would get a
+	// dedicated interceptor.
+	authorizationHeader := md.Get(mcpconst.AuthorizationHeader)
+	if len(authorizationHeader) > 0 {
+		// what TODO if there are more than one?
+		// looks like we have at least one header, use the first.
+		ctx = context.WithValue(ctx, mcpconst.AuthorizationHeader, authorizationHeader[0])
+	}
+
 	return handler(ctx, req)
 }
 
+func initHeadersFromContext(ctx context.Context) map[string]string {
+
+	headersFromContext := map[string]string{}
+
+	CANDIDATE_HEADERS := []string{mcpconst.MCP_SESSION_ID_HEADER, mcpconst.AuthorizationHeader}
+
+	for _, candidateHeader := range CANDIDATE_HEADERS {
+		headerVal := ctx.Value(candidateHeader)
+		if headerValStr, ok := headerVal.(string); ok && headerValStr != "" {
+			// log.Printf("passing through header: %s:%s", candidateHeader, headerValStr)
+			headersFromContext[candidateHeader] = headerValStr
+		}
+	}
+
+	return headersFromContext
+}
+
 // initialize sends the 'initialize' request and synchronously parses the SSE response to get a session ID.
-func (s *Server) doInitializeJsonRpc(req *mcp.InitializeRequest) (string, error) {
+func (s *Server) doInitializeJsonRpc(ctx context.Context, req *mcp.InitializeRequest) (string, error) {
 
 	log.Println("Initializing MCP session...")
 
-	additionalHeaders := map[string]string{}
-	httpReq, err := jsonrpc.NewJSONRPCRequest(s.Url(), "initialize", req, additionalHeaders, http.NewRequest)
+	additionalHeaders := initHeadersFromContext(ctx)
+	httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpUrl, "initialize", req, additionalHeaders, http.NewRequest)
 
-	// httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpHost, s.mcpPort, s.mcpUri, "initialize", req, additionalHeaders)
 	if err != nil {
 		return "", status.Errorf(codes.Internal, "failed 'initialize' jsonrpc request: %v", err)
 	}
@@ -150,13 +170,12 @@ func (s *Server) doInitializeJsonRpc(req *mcp.InitializeRequest) (string, error)
 }
 
 // follows up initialize() with an initialized() (notice the past tense) call to confirm a session
-func (s *Server) doInitializedJsonRpc(sessionID string) error {
+func (s *Server) doInitializedJsonRpc(ctx context.Context) error {
 
 	log.Println("acking MCP session initializaton ...")
 
-	// httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpHost, s.mcpPort, s.mcpUri, "notifications/initialized", nil, sessionHeader)
-	sessionHeader := map[string]string{mcpconst.MCP_SESSION_ID_HEADER: sessionID}
-	httpReq, err := jsonrpc.NewJSONRPCRequest(s.Url(), "notifications/initialized", nil, sessionHeader, http.NewRequest)
+	additionalHeaders := initHeadersFromContext(ctx)
+	httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpUrl, "notifications/initialized", nil, additionalHeaders, http.NewRequest)
 
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed 'initialized' http request: %v", err)
@@ -180,11 +199,16 @@ func (s *Server) doInitializedJsonRpc(sessionID string) error {
 func (s *Server) Initialize(ctx context.Context, req *mcp.InitializeRequest) (*mcp.InitializeResult, error) {
 	log.Println("Initialize called...")
 
-	sessionID, err := s.doInitializeJsonRpc(req)
+	sessionID, err := s.doInitializeJsonRpc(ctx, req)
 	if err != nil || sessionID == "" {
 		return nil, status.Errorf(codes.Internal, "failed to initialize MCP session: %v", err)
 	}
-	if err := s.doInitializedJsonRpc(sessionID); err != nil {
+
+	// tuck the sessionId into the ctx for the subsequent Initialized ack call
+
+	ctx = context.WithValue(ctx, mcpconst.MCP_SESSION_ID_HEADER, sessionID)
+
+	if err := s.doInitializedJsonRpc(ctx); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to ack MCP session initialization: %v", err)
 	}
 
@@ -242,13 +266,8 @@ func (s *Server) Ping(ctx context.Context, req *mcp.PingRequest) (*mcp.PingResul
 func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage,
 	jsonRpcMethod mcpconst.JsonRpcMethod, rpcResultPtr any) error {
 
-	sessionID, ok := ctx.Value(mcpconst.MCP_SESSION_ID_HEADER).(string)
-	if !ok {
-		return status.Errorf(codes.Internal, "could not get session id (%s) from context", mcpconst.MCP_SESSION_ID_HEADER)
-	}
-
-	headers := map[string]string{mcpconst.MCP_SESSION_ID_HEADER: sessionID}
-	jsonRpcResponseParts, err := jsonrpc.GetJSONRPCRequestResponse(ctx, s.Url(), jsonRpcMethod, req, headers)
+	additionalHeaders := initHeadersFromContext(ctx)
+	jsonRpcResponseParts, err := jsonrpc.GetJSONRPCRequestResponse(ctx, s.mcpUrl, jsonRpcMethod, req, additionalHeaders)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
 	}
