@@ -103,7 +103,11 @@ grpcurl -v -H "${MCP_SESSION_HEADER}" -plaintext localhost:8080 mcp.ModelContext
 ```bash
 
 export GITHUB_PAT=[your token]
-grpcurl -v -plaintext -H "Authorization: Bearer ${GITHUB_PAT}"   https://api.githubcopilot.com:443/mcp/    mcp.ModelContextProtocol/Initialize
+grpcurl -v -plaintext -H "Authorization: Bearer ${GITHUB_PAT}" localhost:8080  mcp.ModelContextProtocol/Initialize
+
+MCP_SESSION_HEADER=$(grpcurl -v -plaintext -H "Authorization: Bearer ${GITHUB_PAT}" localhost:8080  mcp.ModelContextProtocol/Initialize | grep mcp-session-id)
+
+grpcurl -H "${MCP_SESSION_HEADER}" -H "Authorization: Bearer ${GITHUB_PAT}" -plaintext localhost:8080 mcp.ModelContextProtocol/ListTools
 
 
 ```

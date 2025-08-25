@@ -88,14 +88,27 @@ func (s *Server) StartProxyToListenerAsync(lis net.Listener) (func(), error) {
 
 // sessionInterceptor is a gRPC unary interceptor that checks for the MCP_SESSION_ID_HEADER header.
 func sessionInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	// bypass the interceptor for the Initialize method
-	if strings.HasSuffix(info.FullMethod, "Initialize") {
-		return handler(ctx, req)
-	}
+
+	// first, check for Authorization header because they're intended for
+	// the downstream MCP server (ie as opposed to our service which would get a
+	// dedicated interceptor. So, we want to make them available in the ctx
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, status.Errorf(codes.InvalidArgument, "missing metadata")
+	}
+
+	authorizationHeader := md.Get(mcpconst.AuthorizationHeader)
+	if len(authorizationHeader) > 0 {
+		// what TODO if there are more than one?
+		// looks like we have at least one header, use the first.
+		ctx = context.WithValue(ctx, mcpconst.AuthorizationHeader, authorizationHeader[0])
+	}
+
+	// Next step is to check/process the session id which follows for all but
+	// the Initialize method. Skip it bc that's where the session comes from
+	if strings.HasSuffix(info.FullMethod, "Initialize") {
+		return handler(ctx, req)
 	}
 
 	sessionID := md.Get(mcpconst.MCP_SESSION_ID_HEADER)
@@ -107,16 +120,6 @@ func sessionInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo
 	// Before we do, let's add the session ID to the context so that the
 	// RPC handlers can access it.
 	ctx = context.WithValue(ctx, mcpconst.MCP_SESSION_ID_HEADER, sessionID[0])
-
-	// likewise, let's pass through any Authorization headers because they're intended for
-	// the downstream MCP server (ie as opposed to our service which would get a
-	// dedicated interceptor.
-	authorizationHeader := md.Get(mcpconst.AuthorizationHeader)
-	if len(authorizationHeader) > 0 {
-		// what TODO if there are more than one?
-		// looks like we have at least one header, use the first.
-		ctx = context.WithValue(ctx, mcpconst.AuthorizationHeader, authorizationHeader[0])
-	}
 
 	return handler(ctx, req)
 }
@@ -271,6 +274,10 @@ func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage,
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
 	}
+
+	// there seem to be two ways jsonrpc content comes in the response body, either:
+	// * in newline delimited key/value pairs where what we want is prefixed by "data:"
+	// * or as in the github mcp server, just the body itself in one part.
 
 	var jsonRPCResp jsonrpc.JSONRPCResponse
 	if err := json.Unmarshal([]byte(jsonRpcResponseParts["data"]), &jsonRPCResp); err != nil {
