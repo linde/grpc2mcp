@@ -9,6 +9,8 @@ import (
 	"grpc2mcp/pb"
 	"log"
 	"net/http/httptest"
+	"reflect"
+	"sort"
 	"strings"
 
 	"google.golang.org/grpc"
@@ -33,27 +35,26 @@ func doGrpcProxyTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocol
 	}
 	log.Printf("ping: %v", PingResult)
 
+	// this tests our ListTools rpc making sure that our target tools are present
+	toolsExpected := []string{}
+	for _, providedTool := range examplemcp.ToolsProvided {
+		toolsExpected = append(toolsExpected, providedTool.GetName())
+	}
+	sort.Strings(toolsExpected)
+
+	toolsFound := []string{}
 	listToolsResult, err := mcpGrpcClient.ListTools(sessionCtx, &pb.ListToolsRequest{})
 	if err != nil {
 		return fmt.Errorf("error with ListTools: %w", err)
 	}
-	// this tests our ListTools rpc making sure that our target tools are present
-	missingTools := []string{}
-targetToolsLoop:
-	for _, providedTool := range examplemcp.ToolsProvided {
-		target := providedTool.GetName()
-
-		for _, tool := range listToolsResult.Tools {
-			if tool.Name == target {
-				log.Printf("ListTools: found target %s", target)
-				continue targetToolsLoop
-			}
-		}
-		missingTools = append(missingTools, target)
+	for _, tool := range listToolsResult.Tools {
+		toolsFound = append(toolsFound, tool.Name)
 	}
+	sort.Strings(toolsFound)
 
-	if len(missingTools) > 0 {
-		return fmt.Errorf("error ListTools missing: %v", missingTools)
+	// TODO this shoud probably just be an assert.ElementsMatch()
+	if !reflect.DeepEqual(toolsExpected, toolsFound) {
+		return fmt.Errorf("tools expected %v not equal tools found %v", toolsExpected, toolsFound)
 	}
 	return nil
 }
