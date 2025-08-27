@@ -2,11 +2,11 @@ package proxy
 
 import (
 	"context"
-	"fmt"
 	"grpc2mcp/internal/examplemcp"
 	"grpc2mcp/pb"
 	"log"
 	"net"
+	"net/http/httptest"
 	"testing"
 
 	asserts "github.com/stretchr/testify/assert"
@@ -21,22 +21,16 @@ func TestBufconDirect(t *testing.T) {
 	assert.NotNil(assert)
 
 	handler := examplemcp.RunTrivyServer(t.Name())
-	mcpListener, trivyServerCancelFunc, err := RunServerAsync(handler)
-	assert.NoError(err)
-	defer trivyServerCancelFunc()
 
-	// TODO figure out getting an IP from net.TCPAddr better, for now assume 0.0.0.0
-	mcpTcpAddr, _ := mcpListener.Addr().(*net.TCPAddr)
-	mcpUrl := fmt.Sprintf("http://0.0.0.0:%d/", mcpTcpAddr.Port)
-	log.Printf("mcp handler listening on: %s", mcpUrl)
+	ts := httptest.NewServer(handler)
+	defer ts.Close()
+
+	log.Printf("mcp handler listening on: %s", ts.URL)
+	s, err := NewServer(ts.URL)
+	assert.NoError(err)
 
 	const bufSize = 1024 * 1024
 	lis := bufconn.Listen(bufSize)
-
-	// TODO create our own exampleMCP inst
-	s, err := NewServer(mcpUrl)
-	assert.NoError(err)
-
 	serverCancel, err := s.StartProxyToListenerAsync(lis)
 	assert.NoError(err)
 	defer serverCancel()
