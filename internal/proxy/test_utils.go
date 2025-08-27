@@ -2,8 +2,10 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"grpc2mcp/internal/examplemcp"
+	"grpc2mcp/internal/mcpconst"
 	"grpc2mcp/pb"
 	"log"
 	"net/http/httptest"
@@ -11,6 +13,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -162,5 +165,24 @@ func SetupAsyncMcpAndProxy(mcpServerName string) (pb.ModelContextProtocolClient,
 	mcpGrpcClient := pb.NewModelContextProtocolClient(newClient)
 
 	return mcpGrpcClient, closeLine.Close, nil
+
+}
+
+func doMcpInitialize(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) (context.Context, error) {
+
+	var sessionHeader metadata.MD
+	_, err := mcpGrpcClient.Initialize(ctx, &pb.InitializeRequest{}, grpc.Header(&sessionHeader))
+	if err != nil {
+		return nil, fmt.Errorf("error making Initialize grpc call: %w", err)
+	}
+
+	mcpSessionId := sessionHeader.Get(mcpconst.MCP_SESSION_ID_HEADER)
+	if len(mcpSessionId) < 1 {
+		errStr := fmt.Sprintf("did not receive mcp session id: %s", mcpconst.MCP_SESSION_ID_HEADER)
+		return nil, errors.New(errStr)
+	}
+	clientCtx := metadata.NewOutgoingContext(context.Background(), sessionHeader)
+
+	return clientCtx, nil
 
 }
