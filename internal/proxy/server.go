@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -143,25 +142,17 @@ func initHeadersFromContext(ctx context.Context) map[string]string {
 
 // initialize sends the 'initialize' request and synchronously parses the SSE response to get a session ID.
 func (s *Server) doInitializeJsonRpc(ctx context.Context, req *mcp.InitializeRequest) (string, error) {
-
 	log.Println("Initializing MCP session...")
 
 	additionalHeaders := initHeadersFromContext(ctx)
-	httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpUrl, "initialize", req, additionalHeaders, http.NewRequest)
-
+	httpReq, err := jsonrpc.NewJSONRPCRequest(ctx, s.mcpUrl, mcpconst.Initialize, req, additionalHeaders, http.NewRequestWithContext)
 	if err != nil {
 		return "", status.Errorf(codes.Internal, "failed 'initialize' jsonrpc request: %v", err)
 	}
 
-	httpResp, err := s.httpClient.Do(httpReq)
+	_, httpResp, err := jsonrpc.DoRequest(ctx, &s.httpClient, httpReq)
 	if err != nil {
-		return "", fmt.Errorf("failed to send initialize request: %w", err)
-	}
-	defer httpResp.Body.Close()
-
-	if httpResp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(httpResp.Body)
-		return "", fmt.Errorf("initialize request failed with status %d: %s", httpResp.StatusCode, string(body))
+		return "", err // DoRequest already wraps the error.
 	}
 
 	mcpSessionId, ok := httpResp.Header[mcpconst.MCP_SESSION_ID_HEADER]
@@ -174,28 +165,16 @@ func (s *Server) doInitializeJsonRpc(ctx context.Context, req *mcp.InitializeReq
 
 // follows up initialize() with an initialized() (notice the past tense) call to confirm a session
 func (s *Server) doInitializedJsonRpc(ctx context.Context) error {
-
 	log.Println("acking MCP session initializaton ...")
 
 	additionalHeaders := initHeadersFromContext(ctx)
-	httpReq, err := jsonrpc.NewJSONRPCRequest(s.mcpUrl, "notifications/initialized", nil, additionalHeaders, http.NewRequest)
-
+	httpReq, err := jsonrpc.NewJSONRPCRequest(ctx, s.mcpUrl, mcpconst.NotificationsInitialized, nil, additionalHeaders, http.NewRequestWithContext)
 	if err != nil {
 		return status.Errorf(codes.Internal, "failed 'initialized' http request: %v", err)
 	}
 
-	httpResp, err := s.httpClient.Do(httpReq)
-	if err != nil {
-		return fmt.Errorf("failed 'initialized' request: %w", err)
-	}
-	defer httpResp.Body.Close()
-
-	if httpResp.StatusCode != http.StatusAccepted {
-		body, _ := io.ReadAll(httpResp.Body)
-		return fmt.Errorf("failed 'initialized' with status %d: %s", httpResp.StatusCode, string(body))
-	}
-
-	return nil
+	_, _, err = jsonrpc.DoRequest(ctx, &s.httpClient, httpReq)
+	return err
 }
 
 // Initialize implements the Initialize RPC.
@@ -208,7 +187,6 @@ func (s *Server) Initialize(ctx context.Context, req *mcp.InitializeRequest) (*m
 	}
 
 	// tuck the sessionId into the ctx for the subsequent Initialized ack call
-
 	ctx = context.WithValue(ctx, mcpconst.MCP_SESSION_ID_HEADER, sessionID)
 
 	if err := s.doInitializedJsonRpc(ctx); err != nil {
@@ -228,40 +206,27 @@ func (s *Server) Initialize(ctx context.Context, req *mcp.InitializeRequest) (*m
 
 // CallMethod implements the CallMethod RPC.
 func (s *Server) CallMethod(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	// log.Printf("CallMethod requested for method '%s': %v", req.Name, req)
-
 	var result mcp.CallToolResult
-	err := s.doRpcCall(ctx, req, "tools/call", &result)
-
+	err := s.doRpcCall(ctx, req, mcpconst.ToolsCall, &result)
 	return &result, err
 }
 
 // ListTools implements the ListTools RPC.
 func (s *Server) ListTools(ctx context.Context, req *mcp.ListToolsRequest) (*mcp.ListToolsResult, error) {
-	log.Printf("ListTools requested: %v", req)
-
 	var listToolsResult mcp.ListToolsResult
-
 	err := s.doRpcCall(ctx, req, "tools/list", &listToolsResult)
 	return &listToolsResult, err
-
 }
 
 func (s *Server) Complete(ctx context.Context, req *mcp.CompleteRequest) (*mcp.CompleteResult, error) {
-	log.Printf("Complete requested: %v", req)
-
 	var result mcp.CompleteResult
 	err := s.doRpcCall(ctx, req, "completion/complete", &result)
-
 	return &result, err
 }
 
 func (s *Server) Ping(ctx context.Context, req *mcp.PingRequest) (*mcp.PingResult, error) {
-	log.Printf("Ping requested: %v", req)
-
 	var result mcp.PingResult
 	err := s.doRpcCall(ctx, req, mcpconst.Ping, &result)
-
 	return &result, err
 }
 
@@ -270,26 +235,31 @@ func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage,
 	jsonRpcMethod mcpconst.JsonRpcMethod, rpcResultPtr any) error {
 
 	additionalHeaders := initHeadersFromContext(ctx)
-	jsonRpcResponseParts, err := jsonrpc.GetJSONRPCRequestResponse(ctx, s.mcpUrl, jsonRpcMethod, req, additionalHeaders)
+	httpReq, err := jsonrpc.NewJSONRPCRequest(ctx, s.mcpUrl, jsonRpcMethod, req, additionalHeaders, http.NewRequestWithContext)
 	if err != nil {
-		return status.Errorf(codes.Internal, "failed to parse mcp server response: %v", err)
+		return status.Errorf(codes.Internal, "failed to create http request for %s: %v", jsonRpcMethod, err)
 	}
 
-	// there seem to be two ways jsonrpc content comes in the response body, either:
-	// * in newline delimited key/value pairs where what we want is prefixed by "data:"
-	// * or as in the github mcp server, just the body itself in one part.
-
-	var jsonRPCResp jsonrpc.JSONRPCResponse
-	if err := json.Unmarshal([]byte(jsonRpcResponseParts["data"]), &jsonRPCResp); err != nil {
-		return status.Errorf(codes.Internal, "failed to unmarshal mcp server response: %v", err)
+	resp, _, err := jsonrpc.DoRequest(ctx, &s.httpClient, httpReq)
+	if err != nil {
+		return err // DoRequest already wraps the error.
 	}
 
-	if jsonRPCResp.Error != nil {
+	if resp == nil {
+		// This can happen for notifications that succeed with no content.
+		return nil
+	}
+
+	if resp.Error != nil {
 		return status.Errorf(codes.Aborted, "MCP server returned an error (code %d): %s",
-			jsonRPCResp.Error.Code, jsonRPCResp.Error.Message)
+			resp.Error.Code, resp.Error.Message)
 	}
 
-	if err := json.Unmarshal(jsonRPCResp.Result, rpcResultPtr); err != nil {
+	if resp.Result == nil {
+		return status.Errorf(codes.Internal, "MCP server returned a nil result")
+	}
+
+	if err := json.Unmarshal(*resp.Result, rpcResultPtr); err != nil {
 		return status.Errorf(codes.Internal, "failed to unmarshal result from mcp server: %v", err)
 	}
 

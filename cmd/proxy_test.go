@@ -11,7 +11,7 @@ func TestProxyCommand(t *testing.T) {
 	rootCmd.SetArgs([]string{"proxy", "--mcp-url=https://api.githubcopilot.com/mcp/"})
 	runningCheckStr := []string{"proxy server listening on"}
 
-	//	runSubCommand(t, rootCmd, 250*time.Millisecond, runningCheckStr)
-	runSubCommand(t, rootCmd, 250*time.Hour, runningCheckStr)
+	runSubCommand(t, rootCmd, 250*time.Millisecond, runningCheckStr)
+	// runSubCommand(t, rootCmd, 250*time.Hour, runningCheckStr)
 
 }

@@ -3,6 +3,7 @@ package examplemcp
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"grpc2mcp/internal/jsonrpc"
 	"grpc2mcp/internal/mcpconst"
@@ -15,12 +16,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func testNewRequester(method string, url string, body io.Reader) (*http.Request, error) {
+func testNewRequester(ctx context.Context, method string, url string, body io.Reader) (*http.Request, error) {
 	return httptest.NewRequest(method, url, body), nil
 }
 
 func setupSession(t *testing.T, handler http.Handler) string {
 	assert := assert.New(t)
+	ctx := context.Background()
 
 	// 1. Initialize
 	initParams := map[string]any{
@@ -33,7 +35,7 @@ func setupSession(t *testing.T, handler http.Handler) string {
 	}
 
 	addlHeaders := map[string]string{} // no headers
-	initReq, err := jsonrpc.NewJSONRPCRequest("/", mcpconst.Initialize,
+	initReq, err := jsonrpc.NewJSONRPCRequest(ctx, "/", mcpconst.Initialize,
 		initParams, addlHeaders, testNewRequester)
 	assert.NoError(err)
 
@@ -46,7 +48,7 @@ func setupSession(t *testing.T, handler http.Handler) string {
 
 	// 2. Initialized
 	addlHeaders = map[string]string{mcpconst.MCP_SESSION_ID_HEADER: sessionID}
-	initializedReq, err := jsonrpc.NewJSONRPCRequest("/",
+	initializedReq, err := jsonrpc.NewJSONRPCRequest(ctx, "/",
 		mcpconst.NotificationsInitialized, nil, addlHeaders, testNewRequester)
 	assert.NoError(err)
 
@@ -60,6 +62,7 @@ func setupSession(t *testing.T, handler http.Handler) string {
 func TestTrivyServerTools(t *testing.T) {
 	handler := RunTrivyServer("test")
 	sessionID := setupSession(t, handler)
+	ctx := context.Background()
 
 	testCases := []struct {
 		name             string
@@ -97,7 +100,7 @@ func TestTrivyServerTools(t *testing.T) {
 			}
 
 			addlHeaders := map[string]string{mcpconst.MCP_SESSION_ID_HEADER: sessionID}
-			req, err := jsonrpc.NewJSONRPCRequest("/", mcpconst.ToolsCall, params,
+			req, err := jsonrpc.NewJSONRPCRequest(ctx, "/", mcpconst.ToolsCall, params,
 				addlHeaders, testNewRequester)
 			assert.NoError(err)
 

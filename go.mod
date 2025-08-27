@@ -5,6 +5,7 @@ go 1.24.4
 require (
 	github.com/mark3labs/mcp-go v0.37.0
 	github.com/modelcontextprotocol/go-sdk v0.2.1-0.20250812214950-6e03217c831b
+	github.com/sourcegraph/jsonrpc2 v0.2.1
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/grpc v1.74.2
