@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"grpc2mcp/internal/examplemcp"
 	"grpc2mcp/internal/mcpconst"
 	"grpc2mcp/pb"
 
@@ -14,7 +13,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -48,51 +46,6 @@ func RunServerAsync(handler http.Handler) (net.Listener, context.CancelFunc, err
 	}()
 
 	return listener, cancel, nil
-}
-
-func SetupAsyncMcpAndProxy(mcpServerName string) (pb.ModelContextProtocolClient, func(), error) {
-
-	accumulatedCancelFuncs := make([]func(), 3)
-	aggregateCancelFunc := func() {
-		log.Printf("shutting down mcp server and grpc proxy")
-		for _, f := range accumulatedCancelFuncs {
-			if f != nil {
-				f()
-			}
-		}
-	}
-
-	handler := examplemcp.RunTrivyServer(mcpServerName)
-	mcpListener, trivyServerCancelFunc, err := RunServerAsync(handler)
-	if err != nil {
-		return nil, aggregateCancelFunc, fmt.Errorf("error setting up proxy in SetupMcpAndProxy: %w", err)
-	}
-	accumulatedCancelFuncs = append(accumulatedCancelFuncs, trivyServerCancelFunc)
-
-	// TODO figure out getting an IP from net.TCPAddr better, for now assume 0.0.0.0
-	mcpTcpAddr, _ := mcpListener.Addr().(*net.TCPAddr)
-	mcpUrl := fmt.Sprintf("http://0.0.0.0:%d/", mcpTcpAddr.Port)
-	log.Printf("mcp handler listening on: %s", mcpUrl)
-	s, err := NewServer(mcpUrl)
-	if err != nil {
-		return nil, aggregateCancelFunc, fmt.Errorf("failed to create proxy server: %w", err)
-	}
-
-	proxyTcpAddr, proxyCancelFunc, err := s.StartAsync(0) // let system find open port
-	accumulatedCancelFuncs = append(accumulatedCancelFuncs, proxyCancelFunc)
-	if err != nil {
-		return nil, aggregateCancelFunc, fmt.Errorf("failed to start proxy server: %w", err)
-	}
-
-	log.Printf("mcp grpc proxy listening on: %s", proxyTcpAddr)
-
-	// put together a client and return it to the caller
-	newClient, newClientErr := grpc.NewClient(proxyTcpAddr.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-
-	mcpGrpcClient := pb.NewModelContextProtocolClient(newClient)
-
-	return mcpGrpcClient, aggregateCancelFunc, newClientErr
-
 }
 
 func doMcpInitialize(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) (context.Context, error) {

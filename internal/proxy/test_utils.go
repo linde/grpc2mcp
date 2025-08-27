@@ -6,8 +6,11 @@ import (
 	"grpc2mcp/internal/examplemcp"
 	"grpc2mcp/pb"
 	"log"
+	"net/http/httptest"
 	"strings"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -123,4 +126,43 @@ func doGrpcProxyToolTests(ctx context.Context, mcpGrpcClient pb.ModelContextProt
 			len(failedAssertions), strings.Join(failedAssertions, "\n"))
 	}
 	return nil
+}
+
+func SetupAsyncMcpAndProxy(mcpServerName string) (pb.ModelContextProtocolClient, func(), error) {
+
+	// TODO make a struct and funcs that hide all this.
+	accumulatedCancelFuncs := make([]func(), 3)
+	aggregateCancelFunc := func() {
+		log.Printf("shutting down mcp server and grpc proxy")
+		for _, f := range accumulatedCancelFuncs {
+			if f != nil {
+				f()
+			}
+		}
+	}
+
+	handler := examplemcp.RunTrivyServer(mcpServerName)
+	ts := httptest.NewServer(handler)
+	accumulatedCancelFuncs = append(accumulatedCancelFuncs, ts.Close)
+	log.Printf("mcp handler listening on: %s", ts.URL)
+	s, err := NewServer(ts.URL)
+	if err != nil {
+		return nil, aggregateCancelFunc, fmt.Errorf("failed to create proxy server: %w", err)
+	}
+
+	proxyTcpAddr, proxyCancelFunc, err := s.StartAsync(0)
+	accumulatedCancelFuncs = append(accumulatedCancelFuncs, proxyCancelFunc)
+	if err != nil {
+		return nil, aggregateCancelFunc, fmt.Errorf("failed to start proxy server: %w", err)
+	}
+
+	log.Printf("mcp grpc proxy listening on: %s", proxyTcpAddr)
+
+	// put together a client and return it to the caller
+	newClient, newClientErr := grpc.NewClient(proxyTcpAddr.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	mcpGrpcClient := pb.NewModelContextProtocolClient(newClient)
+
+	return mcpGrpcClient, aggregateCancelFunc, newClientErr
+
 }
