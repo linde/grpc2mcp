@@ -130,39 +130,37 @@ func doGrpcProxyToolTests(ctx context.Context, mcpGrpcClient pb.ModelContextProt
 
 func SetupAsyncMcpAndProxy(mcpServerName string) (pb.ModelContextProtocolClient, func(), error) {
 
-	// TODO make a struct and funcs that hide all this.
-	accumulatedCancelFuncs := make([]func(), 3)
-	aggregateCancelFunc := func() {
-		log.Printf("shutting down mcp server and grpc proxy")
-		for _, f := range accumulatedCancelFuncs {
-			if f != nil {
-				f()
-			}
-		}
-	}
+	closeLine := &CloseLine{}
 
 	handler := examplemcp.RunTrivyServer(mcpServerName)
 	ts := httptest.NewServer(handler)
-	accumulatedCancelFuncs = append(accumulatedCancelFuncs, ts.Close)
+	closeLine.Add(ts.Close)
 	log.Printf("mcp handler listening on: %s", ts.URL)
 	s, err := NewServer(ts.URL)
 	if err != nil {
-		return nil, aggregateCancelFunc, fmt.Errorf("failed to create proxy server: %w", err)
+		closeLine.Close()
+		return nil, closeLine.Close, fmt.Errorf("failed to create proxy server: %w", err)
 	}
 
 	proxyTcpAddr, proxyCancelFunc, err := s.StartAsync(0)
-	accumulatedCancelFuncs = append(accumulatedCancelFuncs, proxyCancelFunc)
 	if err != nil {
-		return nil, aggregateCancelFunc, fmt.Errorf("failed to start proxy server: %w", err)
+		closeLine.Close()
+		return nil, closeLine.Close, fmt.Errorf("failed to start proxy server: %w", err)
 	}
+	closeLine.Add(proxyCancelFunc)
 
 	log.Printf("mcp grpc proxy listening on: %s", proxyTcpAddr)
 
 	// put together a client and return it to the caller
 	newClient, newClientErr := grpc.NewClient(proxyTcpAddr.String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if newClientErr != nil {
+		closeLine.Close()
+		return nil, closeLine.Close, newClientErr
+	}
+	closeLine.AddE(newClient.Close)
 
 	mcpGrpcClient := pb.NewModelContextProtocolClient(newClient)
 
-	return mcpGrpcClient, aggregateCancelFunc, newClientErr
+	return mcpGrpcClient, closeLine.Close, nil
 
 }
