@@ -21,18 +21,10 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
-type mcpSession struct {
-	sessionID string
-}
-
 // Server is the gRPC server that implements the ModelContextProtocolServer interface.
 type Server struct {
 	mcpUrl     string
 	httpClient http.Client
-}
-
-func (s *Server) getMcpUrl() string {
-	return s.mcpUrl
 }
 
 func NewServer(mcpUrl string) (*Server, error) {
