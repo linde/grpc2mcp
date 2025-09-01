@@ -15,6 +15,8 @@ func main() {
 		"Demo 🚀",
 		"1.0.0",
 		server.WithToolCapabilities(true),
+		server.WithResourceCapabilities(true, true),
+		server.WithPromptCapabilities(true),
 	)
 
 	// Add tool

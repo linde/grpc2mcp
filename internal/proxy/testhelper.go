@@ -132,6 +132,41 @@ func doGrpcProxyToolTests(ctx context.Context, mcpGrpcClient pb.ModelContextProt
 	return nil
 }
 
+func doGrpcProxyPromptTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) error {
+
+	sessionCtx, err := doMcpInitialize(ctx, mcpGrpcClient)
+	if err != nil {
+		return err
+	}
+
+	listPromptResult, err := mcpGrpcClient.ListPrompts(sessionCtx, &pb.ListPromptsRequest{})
+	if err != nil {
+		return err
+	}
+
+	var promptNamesExpected []string
+	for name := range examplemcp.PromptsProvided {
+		promptNamesExpected = append(promptNamesExpected, name)
+	}
+
+	var promptNamesProvided []string
+	for _, p := range listPromptResult.GetPrompts() {
+		promptNamesProvided = append(promptNamesProvided, p.Name)
+	}
+
+	if !reflect.DeepEqual(promptNamesExpected, promptNamesProvided) {
+		return fmt.Errorf("tools expected %v not equal tools found %v", promptNamesExpected, promptNamesProvided)
+	}
+
+	// TODO make some assertions about the prompt
+	_, err = mcpGrpcClient.GetPrompt(sessionCtx, &pb.GetPromptRequest{Name: promptNamesExpected[0]})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func SetupAsyncMcpAndProxy(mcpServerName string) (pb.ModelContextProtocolClient, func(), error) {
 
 	closeLine := &CloseLine{}

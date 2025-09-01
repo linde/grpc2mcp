@@ -93,7 +93,8 @@ func sessionInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo
 	if len(authorizationHeader) > 0 {
 		// what TODO if there are more than one?
 		// looks like we have at least one header, use the first.
-		ctx = context.WithValue(ctx, mcpconst.AuthorizationHeader, authorizationHeader[0])
+
+		ctx = context.WithValue(ctx, mcpconst.AuthorizationHeader, authorizationHeader[0]) //nolint:go-staticcheck // SA1029 ignore this!
 	}
 
 	// Next step is to check/process the session id which follows for all but
@@ -221,6 +222,21 @@ func (s *Server) Ping(ctx context.Context, req *mcp.PingRequest) (*mcp.PingResul
 	err := s.doRpcCall(ctx, req, mcpconst.Ping, &result)
 	return &result, err
 }
+
+// ListPrompts implements the ListPrompts RPC.
+func (s *Server) ListPrompts(ctx context.Context, req *mcp.ListPromptsRequest) (*mcp.ListPromptsResult, error) {
+	var result mcp.ListPromptsResult
+	err := s.doRpcCall(ctx, req, "prompts/list", &result)
+	return &result, err
+}
+
+// GetPrompt implements the GetPrompt RPC.
+func (s *Server) GetPrompt(ctx context.Context, req *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+	var result mcp.GetPromptResult
+	err := s.doRpcCall(ctx, req, "prompts/get", &result)
+	return &result, err
+}
+
 
 // This is the heart of doing a session jsonrpc call and unpacking, then deserializing the result.
 func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage,

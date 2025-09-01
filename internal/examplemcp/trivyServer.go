@@ -96,12 +96,32 @@ var ToolsProvided []toolRegisterer = []toolRegisterer{
 
 // TODO should we be able to specify the URI? ie /mcp
 func RunTrivyServer(executableName string) http.Handler {
-	server := mcp.NewServer(&mcp.Implementation{Name: executableName, Version: "v1.0.0"}, nil)
+	server := mcp.NewServer(
+		&mcp.Implementation{Name: executableName, Version: "v1.0.0"},
+		&mcp.ServerOptions{HasPrompts: true, HasResources: true, HasTools: true},
+	)
 
 	for _, tool := range ToolsProvided {
 		tool.Register(server)
 	}
 
+	for name, handler := range PromptsProvided {
+		server.AddPrompt(&mcp.Prompt{Name: name}, handler)
+	}
+
 	handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return server }, nil)
 	return handler
+}
+
+var PromptsProvided map[string]mcp.PromptHandler = map[string]mcp.PromptHandler{
+	"greet": PromptHi,
+}
+
+func PromptHi(ctx context.Context, ss *mcp.ServerSession, params *mcp.GetPromptParams) (*mcp.GetPromptResult, error) {
+	return &mcp.GetPromptResult{
+		Description: "Warm greeting prompt",
+		Messages: []*mcp.PromptMessage{
+			{Role: "user", Content: &mcp.TextContent{Text: "Be sure to warmly say hi to " + params.Arguments["name"]}},
+		},
+	}, nil
 }

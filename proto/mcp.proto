@@ -14,6 +14,8 @@ service ModelContextProtocol {
     rpc Initialize(InitializeRequest) returns (InitializeResult);
     rpc CallMethod(CallToolRequest) returns (CallToolResult);
     rpc ListTools(ListToolsRequest) returns (ListToolsResult);
+    rpc ListPrompts(ListPromptsRequest) returns (ListPromptsResult);
+    rpc GetPrompt(GetPromptRequest) returns (GetPromptResult);
     rpc Complete(CompleteRequest) returns (CompleteResult);
     rpc Ping(PingRequest) returns (PingResult);
 }
@@ -72,9 +74,38 @@ message PingRequest {}
 
 message PingResult {}
 
+message ListPromptsRequest {
+    optional string cursor = 1;
+    optional google.protobuf.Struct _meta = 2;
+}
+
+message ListPromptsResult {
+    repeated Prompt prompts = 1;
+    optional string nextCursor = 2;
+    optional google.protobuf.Struct _meta = 3;
+}
+
+message GetPromptRequest {
+    string name = 1;
+    optional google.protobuf.Struct _meta = 2;
+}
+
+message GetPromptResult {
+    Prompt prompt = 1;
+    optional google.protobuf.Struct _meta = 2;
+}
+
 // ----------------------------------------------------------------
 // Core Types from Schema
 // ----------------------------------------------------------------
+
+message Prompt {
+    string name = 1;
+    optional string title = 2;
+    repeated ContentBlock content = 3;
+    optional google.protobuf.Struct _meta = 4;
+}
+
 
 message ClientCapabilities {
     map<string, google.protobuf.Struct> experimental = 1;

@@ -46,12 +46,14 @@ func TestBufconDirect(t *testing.T) {
 	defer conn.Close()
 
 	mcpGrpcClient := pb.NewModelContextProtocolClient(conn)
-	ctx := context.Background()
 
-	err = doGrpcProxyTests(ctx, mcpGrpcClient)
+	err = doGrpcProxyTests(context.Background(), mcpGrpcClient)
 	assert.NoError(err)
 
-	err = doGrpcProxyToolTests(ctx, mcpGrpcClient)
+	err = doGrpcProxyToolTests(context.Background(), mcpGrpcClient)
+	assert.NoError(err)
+
+	err = doGrpcProxyPromptTests(context.Background(), mcpGrpcClient)
 	assert.NoError(err)
 
 }
