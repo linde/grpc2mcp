@@ -2,7 +2,9 @@ package examplemcp
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -105,16 +107,36 @@ func RunTrivyServer(executableName string) http.Handler {
 		tool.Register(server)
 	}
 
-	for name, handler := range PromptsProvided {
-		server.AddPrompt(&mcp.Prompt{Name: name}, handler)
+	for _, prompt := range PromptsProvided {
+		server.AddPrompt(prompt.Prompt, prompt.Handler)
 	}
+
+	server.AddResource(&mcp.Resource{
+		Name:     "info",
+		MIMEType: "text/plain",
+		URI:      "embedded:info",
+	}, handleEmbeddedResource)
 
 	handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return server }, nil)
 	return handler
 }
 
-var PromptsProvided map[string]mcp.PromptHandler = map[string]mcp.PromptHandler{
-	"greet": PromptHi,
+type promptDefinition struct {
+	Prompt  *mcp.Prompt
+	Handler mcp.PromptHandler
+}
+
+var PromptsProvided []*promptDefinition = []*promptDefinition{
+	{
+		Prompt: &mcp.Prompt{
+			Name:        "greet",
+			Description: "A prompt that greets the user",
+			Arguments: []*mcp.PromptArgument{
+				{Name: "who", Required: true},
+			},
+		},
+		Handler: PromptHi,
+	},
 }
 
 func PromptHi(ctx context.Context, ss *mcp.ServerSession, params *mcp.GetPromptParams) (*mcp.GetPromptResult, error) {
@@ -122,6 +144,30 @@ func PromptHi(ctx context.Context, ss *mcp.ServerSession, params *mcp.GetPromptP
 		Description: "Warm greeting prompt",
 		Messages: []*mcp.PromptMessage{
 			{Role: "user", Content: &mcp.TextContent{Text: "Be sure to warmly say hi to " + params.Arguments["name"]}},
+		},
+	}, nil
+}
+
+var embeddedResources = map[string]string{
+	"info": "This is the hello example server.",
+}
+
+func handleEmbeddedResource(_ context.Context, req *mcp.ServerRequest[*mcp.ReadResourceParams]) (*mcp.ReadResourceResult, error) {
+	u, err := url.Parse(req.Params.URI)
+	if err != nil {
+		return nil, err
+	}
+	if u.Scheme != "embedded" {
+		return nil, fmt.Errorf("wrong scheme: %q", u.Scheme)
+	}
+	key := u.Opaque
+	text, ok := embeddedResources[key]
+	if !ok {
+		return nil, fmt.Errorf("no embedded resource named %q", key)
+	}
+	return &mcp.ReadResourceResult{
+		Contents: []*mcp.ResourceContents{
+			{URI: req.Params.URI, MIMEType: "text/plain", Text: text},
 		},
 	}, nil
 }

@@ -12,9 +12,8 @@ import (
 )
 
 var exampleMCPCmd = &cobra.Command{
-	Use:   "exampleMCP",
+	Use:   "example-mcp",
 	Short: "Runs an example MCP server",
-	Long:  `Runs an example MCP server`,
 	Run:   runExampleMCPServer,
 }
 

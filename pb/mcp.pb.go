@@ -828,7 +828,8 @@ type Prompt struct {
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Title         *string                `protobuf:"bytes,2,opt,name=title,proto3,oneof" json:"title,omitempty"`
 	Content       []*ContentBlock        `protobuf:"bytes,3,rep,name=content,proto3" json:"content,omitempty"`
-	XMeta         *structpb.Struct       `protobuf:"bytes,4,opt,name=_meta,json=Meta,proto3,oneof" json:"_meta,omitempty"`
+	Params        map[string]*JSONSchema `protobuf:"bytes,4,rep,name=params,proto3" json:"params,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	XMeta         *structpb.Struct       `protobuf:"bytes,5,opt,name=_meta,json=Meta,proto3,oneof" json:"_meta,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -880,6 +881,13 @@ func (x *Prompt) GetTitle() string {
 func (x *Prompt) GetContent() []*ContentBlock {
 	if x != nil {
 		return x.Content
+	}
+	return nil
+}
+
+func (x *Prompt) GetParams() map[string]*JSONSchema {
+	if x != nil {
+		return x.Params
 	}
 	return nil
 }
@@ -2767,12 +2775,16 @@ const file_mcp_proto_rawDesc = "" +
 	"\x0fGetPromptResult\x12#\n" +
 	"\x06prompt\x18\x01 \x01(\v2\v.mcp.PromptR\x06prompt\x121\n" +
 	"\x05_meta\x18\x02 \x01(\v2\x17.google.protobuf.StructH\x00R\x04Meta\x88\x01\x01B\b\n" +
-	"\x06X_meta\"\xab\x01\n" +
+	"\x06X_meta\"\xa8\x02\n" +
 	"\x06Prompt\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x19\n" +
 	"\x05title\x18\x02 \x01(\tH\x00R\x05title\x88\x01\x01\x12+\n" +
-	"\acontent\x18\x03 \x03(\v2\x11.mcp.ContentBlockR\acontent\x121\n" +
-	"\x05_meta\x18\x04 \x01(\v2\x17.google.protobuf.StructH\x01R\x04Meta\x88\x01\x01B\b\n" +
+	"\acontent\x18\x03 \x03(\v2\x11.mcp.ContentBlockR\acontent\x12/\n" +
+	"\x06params\x18\x04 \x03(\v2\x17.mcp.Prompt.ParamsEntryR\x06params\x121\n" +
+	"\x05_meta\x18\x05 \x01(\v2\x17.google.protobuf.StructH\x01R\x04Meta\x88\x01\x01\x1aJ\n" +
+	"\vParamsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
+	"\x05value\x18\x02 \x01(\v2\x0f.mcp.JSONSchemaR\x05value:\x028\x01B\b\n" +
 	"\x06_titleB\b\n" +
 	"\x06X_meta\"\xd9\x02\n" +
 	"\x12ClientCapabilities\x12M\n" +
@@ -2979,7 +2991,7 @@ func file_mcp_proto_rawDescGZIP() []byte {
 }
 
 var file_mcp_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_mcp_proto_msgTypes = make([]protoimpl.MessageInfo, 47)
+var file_mcp_proto_msgTypes = make([]protoimpl.MessageInfo, 48)
 var file_mcp_proto_goTypes = []any{
 	(Role)(0),                         // 0: mcp.Role
 	(*InitializeRequest)(nil),         // 1: mcp.InitializeRequest
@@ -3025,99 +3037,102 @@ var file_mcp_proto_goTypes = []any{
 	(*CompletionContext)(nil),         // 41: mcp.CompletionContext
 	(*Completion)(nil),                // 42: mcp.Completion
 	nil,                               // 43: mcp.CallToolRequest.ArgumentsEntry
-	nil,                               // 44: mcp.ClientCapabilities.ExperimentalEntry
-	nil,                               // 45: mcp.ServerCapabilities.ExperimentalEntry
-	nil,                               // 46: mcp.JSONSchema.PropertiesEntry
-	nil,                               // 47: mcp.CompletionContext.ArgumentsEntry
-	(*structpb.Struct)(nil),           // 48: google.protobuf.Struct
-	(*structpb.Value)(nil),            // 49: google.protobuf.Value
+	nil,                               // 44: mcp.Prompt.ParamsEntry
+	nil,                               // 45: mcp.ClientCapabilities.ExperimentalEntry
+	nil,                               // 46: mcp.ServerCapabilities.ExperimentalEntry
+	nil,                               // 47: mcp.JSONSchema.PropertiesEntry
+	nil,                               // 48: mcp.CompletionContext.ArgumentsEntry
+	(*structpb.Struct)(nil),           // 49: google.protobuf.Struct
+	(*structpb.Value)(nil),            // 50: google.protobuf.Value
 }
 var file_mcp_proto_depIdxs = []int32{
 	16, // 0: mcp.InitializeRequest.capabilities:type_name -> mcp.ClientCapabilities
 	22, // 1: mcp.InitializeRequest.clientInfo:type_name -> mcp.Implementation
 	17, // 2: mcp.InitializeResult.capabilities:type_name -> mcp.ServerCapabilities
 	22, // 3: mcp.InitializeResult.serverInfo:type_name -> mcp.Implementation
-	48, // 4: mcp.ListToolsRequest._meta:type_name -> google.protobuf.Struct
+	49, // 4: mcp.ListToolsRequest._meta:type_name -> google.protobuf.Struct
 	24, // 5: mcp.ListToolsResult.tools:type_name -> mcp.Tool
-	48, // 6: mcp.ListToolsResult._meta:type_name -> google.protobuf.Struct
+	49, // 6: mcp.ListToolsResult._meta:type_name -> google.protobuf.Struct
 	43, // 7: mcp.CallToolRequest.arguments:type_name -> mcp.CallToolRequest.ArgumentsEntry
-	48, // 8: mcp.CallToolRequest._meta:type_name -> google.protobuf.Struct
+	49, // 8: mcp.CallToolRequest._meta:type_name -> google.protobuf.Struct
 	27, // 9: mcp.CallToolResult.content:type_name -> mcp.ContentBlock
-	48, // 10: mcp.CallToolResult.structuredContent:type_name -> google.protobuf.Struct
+	49, // 10: mcp.CallToolResult.structuredContent:type_name -> google.protobuf.Struct
 	38, // 11: mcp.CompleteRequest.ref:type_name -> mcp.PromptReference
 	40, // 12: mcp.CompleteRequest.argument:type_name -> mcp.CompletionArgument
 	41, // 13: mcp.CompleteRequest.context:type_name -> mcp.CompletionContext
 	42, // 14: mcp.CompleteResult.completion:type_name -> mcp.Completion
-	48, // 15: mcp.ListPromptsRequest._meta:type_name -> google.protobuf.Struct
+	49, // 15: mcp.ListPromptsRequest._meta:type_name -> google.protobuf.Struct
 	15, // 16: mcp.ListPromptsResult.prompts:type_name -> mcp.Prompt
-	48, // 17: mcp.ListPromptsResult._meta:type_name -> google.protobuf.Struct
-	48, // 18: mcp.GetPromptRequest._meta:type_name -> google.protobuf.Struct
+	49, // 17: mcp.ListPromptsResult._meta:type_name -> google.protobuf.Struct
+	49, // 18: mcp.GetPromptRequest._meta:type_name -> google.protobuf.Struct
 	15, // 19: mcp.GetPromptResult.prompt:type_name -> mcp.Prompt
-	48, // 20: mcp.GetPromptResult._meta:type_name -> google.protobuf.Struct
+	49, // 20: mcp.GetPromptResult._meta:type_name -> google.protobuf.Struct
 	27, // 21: mcp.Prompt.content:type_name -> mcp.ContentBlock
-	48, // 22: mcp.Prompt._meta:type_name -> google.protobuf.Struct
-	44, // 23: mcp.ClientCapabilities.experimental:type_name -> mcp.ClientCapabilities.ExperimentalEntry
-	18, // 24: mcp.ClientCapabilities.roots:type_name -> mcp.RootsCapability
-	48, // 25: mcp.ClientCapabilities.sampling:type_name -> google.protobuf.Struct
-	48, // 26: mcp.ClientCapabilities.elicitation:type_name -> google.protobuf.Struct
-	45, // 27: mcp.ServerCapabilities.experimental:type_name -> mcp.ServerCapabilities.ExperimentalEntry
-	48, // 28: mcp.ServerCapabilities.logging:type_name -> google.protobuf.Struct
-	48, // 29: mcp.ServerCapabilities.completions:type_name -> google.protobuf.Struct
-	19, // 30: mcp.ServerCapabilities.prompts:type_name -> mcp.PromptsCapability
-	20, // 31: mcp.ServerCapabilities.resources:type_name -> mcp.ResourcesCapability
-	21, // 32: mcp.ServerCapabilities.tools:type_name -> mcp.ToolsCapability
-	25, // 33: mcp.Tool.inputSchema:type_name -> mcp.JSONSchema
-	25, // 34: mcp.Tool.outputSchema:type_name -> mcp.JSONSchema
-	26, // 35: mcp.Tool.annotations:type_name -> mcp.ToolAnnotations
-	48, // 36: mcp.Tool._meta:type_name -> google.protobuf.Struct
-	46, // 37: mcp.JSONSchema.properties:type_name -> mcp.JSONSchema.PropertiesEntry
-	28, // 38: mcp.ContentBlock.text:type_name -> mcp.TextContent
-	29, // 39: mcp.ContentBlock.image:type_name -> mcp.ImageContent
-	30, // 40: mcp.ContentBlock.audio:type_name -> mcp.AudioContent
-	31, // 41: mcp.ContentBlock.resourceLink:type_name -> mcp.ResourceLink
-	32, // 42: mcp.ContentBlock.embeddedResource:type_name -> mcp.EmbeddedResource
-	36, // 43: mcp.TextContent.annotations:type_name -> mcp.Annotations
-	48, // 44: mcp.TextContent._meta:type_name -> google.protobuf.Struct
-	36, // 45: mcp.ImageContent.annotations:type_name -> mcp.Annotations
-	48, // 46: mcp.ImageContent._meta:type_name -> google.protobuf.Struct
-	36, // 47: mcp.AudioContent.annotations:type_name -> mcp.Annotations
-	48, // 48: mcp.AudioContent._meta:type_name -> google.protobuf.Struct
-	33, // 49: mcp.ResourceLink.resource:type_name -> mcp.Resource
-	34, // 50: mcp.EmbeddedResource.textResource:type_name -> mcp.TextResourceContents
-	35, // 51: mcp.EmbeddedResource.blobResource:type_name -> mcp.BlobResourceContents
-	36, // 52: mcp.EmbeddedResource.annotations:type_name -> mcp.Annotations
-	48, // 53: mcp.EmbeddedResource._meta:type_name -> google.protobuf.Struct
-	36, // 54: mcp.Resource.annotations:type_name -> mcp.Annotations
-	48, // 55: mcp.Resource._meta:type_name -> google.protobuf.Struct
-	48, // 56: mcp.TextResourceContents._meta:type_name -> google.protobuf.Struct
-	48, // 57: mcp.BlobResourceContents._meta:type_name -> google.protobuf.Struct
-	0,  // 58: mcp.Annotations.audience:type_name -> mcp.Role
-	38, // 59: mcp.Reference.prompt:type_name -> mcp.PromptReference
-	39, // 60: mcp.Reference.resourceTemplate:type_name -> mcp.ResourceTemplateReference
-	47, // 61: mcp.CompletionContext.arguments:type_name -> mcp.CompletionContext.ArgumentsEntry
-	49, // 62: mcp.CallToolRequest.ArgumentsEntry.value:type_name -> google.protobuf.Value
-	48, // 63: mcp.ClientCapabilities.ExperimentalEntry.value:type_name -> google.protobuf.Struct
-	48, // 64: mcp.ServerCapabilities.ExperimentalEntry.value:type_name -> google.protobuf.Struct
-	25, // 65: mcp.JSONSchema.PropertiesEntry.value:type_name -> mcp.JSONSchema
-	1,  // 66: mcp.ModelContextProtocol.Initialize:input_type -> mcp.InitializeRequest
-	5,  // 67: mcp.ModelContextProtocol.CallMethod:input_type -> mcp.CallToolRequest
-	3,  // 68: mcp.ModelContextProtocol.ListTools:input_type -> mcp.ListToolsRequest
-	11, // 69: mcp.ModelContextProtocol.ListPrompts:input_type -> mcp.ListPromptsRequest
-	13, // 70: mcp.ModelContextProtocol.GetPrompt:input_type -> mcp.GetPromptRequest
-	7,  // 71: mcp.ModelContextProtocol.Complete:input_type -> mcp.CompleteRequest
-	9,  // 72: mcp.ModelContextProtocol.Ping:input_type -> mcp.PingRequest
-	2,  // 73: mcp.ModelContextProtocol.Initialize:output_type -> mcp.InitializeResult
-	6,  // 74: mcp.ModelContextProtocol.CallMethod:output_type -> mcp.CallToolResult
-	4,  // 75: mcp.ModelContextProtocol.ListTools:output_type -> mcp.ListToolsResult
-	12, // 76: mcp.ModelContextProtocol.ListPrompts:output_type -> mcp.ListPromptsResult
-	14, // 77: mcp.ModelContextProtocol.GetPrompt:output_type -> mcp.GetPromptResult
-	8,  // 78: mcp.ModelContextProtocol.Complete:output_type -> mcp.CompleteResult
-	10, // 79: mcp.ModelContextProtocol.Ping:output_type -> mcp.PingResult
-	73, // [73:80] is the sub-list for method output_type
-	66, // [66:73] is the sub-list for method input_type
-	66, // [66:66] is the sub-list for extension type_name
-	66, // [66:66] is the sub-list for extension extendee
-	0,  // [0:66] is the sub-list for field type_name
+	44, // 22: mcp.Prompt.params:type_name -> mcp.Prompt.ParamsEntry
+	49, // 23: mcp.Prompt._meta:type_name -> google.protobuf.Struct
+	45, // 24: mcp.ClientCapabilities.experimental:type_name -> mcp.ClientCapabilities.ExperimentalEntry
+	18, // 25: mcp.ClientCapabilities.roots:type_name -> mcp.RootsCapability
+	49, // 26: mcp.ClientCapabilities.sampling:type_name -> google.protobuf.Struct
+	49, // 27: mcp.ClientCapabilities.elicitation:type_name -> google.protobuf.Struct
+	46, // 28: mcp.ServerCapabilities.experimental:type_name -> mcp.ServerCapabilities.ExperimentalEntry
+	49, // 29: mcp.ServerCapabilities.logging:type_name -> google.protobuf.Struct
+	49, // 30: mcp.ServerCapabilities.completions:type_name -> google.protobuf.Struct
+	19, // 31: mcp.ServerCapabilities.prompts:type_name -> mcp.PromptsCapability
+	20, // 32: mcp.ServerCapabilities.resources:type_name -> mcp.ResourcesCapability
+	21, // 33: mcp.ServerCapabilities.tools:type_name -> mcp.ToolsCapability
+	25, // 34: mcp.Tool.inputSchema:type_name -> mcp.JSONSchema
+	25, // 35: mcp.Tool.outputSchema:type_name -> mcp.JSONSchema
+	26, // 36: mcp.Tool.annotations:type_name -> mcp.ToolAnnotations
+	49, // 37: mcp.Tool._meta:type_name -> google.protobuf.Struct
+	47, // 38: mcp.JSONSchema.properties:type_name -> mcp.JSONSchema.PropertiesEntry
+	28, // 39: mcp.ContentBlock.text:type_name -> mcp.TextContent
+	29, // 40: mcp.ContentBlock.image:type_name -> mcp.ImageContent
+	30, // 41: mcp.ContentBlock.audio:type_name -> mcp.AudioContent
+	31, // 42: mcp.ContentBlock.resourceLink:type_name -> mcp.ResourceLink
+	32, // 43: mcp.ContentBlock.embeddedResource:type_name -> mcp.EmbeddedResource
+	36, // 44: mcp.TextContent.annotations:type_name -> mcp.Annotations
+	49, // 45: mcp.TextContent._meta:type_name -> google.protobuf.Struct
+	36, // 46: mcp.ImageContent.annotations:type_name -> mcp.Annotations
+	49, // 47: mcp.ImageContent._meta:type_name -> google.protobuf.Struct
+	36, // 48: mcp.AudioContent.annotations:type_name -> mcp.Annotations
+	49, // 49: mcp.AudioContent._meta:type_name -> google.protobuf.Struct
+	33, // 50: mcp.ResourceLink.resource:type_name -> mcp.Resource
+	34, // 51: mcp.EmbeddedResource.textResource:type_name -> mcp.TextResourceContents
+	35, // 52: mcp.EmbeddedResource.blobResource:type_name -> mcp.BlobResourceContents
+	36, // 53: mcp.EmbeddedResource.annotations:type_name -> mcp.Annotations
+	49, // 54: mcp.EmbeddedResource._meta:type_name -> google.protobuf.Struct
+	36, // 55: mcp.Resource.annotations:type_name -> mcp.Annotations
+	49, // 56: mcp.Resource._meta:type_name -> google.protobuf.Struct
+	49, // 57: mcp.TextResourceContents._meta:type_name -> google.protobuf.Struct
+	49, // 58: mcp.BlobResourceContents._meta:type_name -> google.protobuf.Struct
+	0,  // 59: mcp.Annotations.audience:type_name -> mcp.Role
+	38, // 60: mcp.Reference.prompt:type_name -> mcp.PromptReference
+	39, // 61: mcp.Reference.resourceTemplate:type_name -> mcp.ResourceTemplateReference
+	48, // 62: mcp.CompletionContext.arguments:type_name -> mcp.CompletionContext.ArgumentsEntry
+	50, // 63: mcp.CallToolRequest.ArgumentsEntry.value:type_name -> google.protobuf.Value
+	25, // 64: mcp.Prompt.ParamsEntry.value:type_name -> mcp.JSONSchema
+	49, // 65: mcp.ClientCapabilities.ExperimentalEntry.value:type_name -> google.protobuf.Struct
+	49, // 66: mcp.ServerCapabilities.ExperimentalEntry.value:type_name -> google.protobuf.Struct
+	25, // 67: mcp.JSONSchema.PropertiesEntry.value:type_name -> mcp.JSONSchema
+	1,  // 68: mcp.ModelContextProtocol.Initialize:input_type -> mcp.InitializeRequest
+	5,  // 69: mcp.ModelContextProtocol.CallMethod:input_type -> mcp.CallToolRequest
+	3,  // 70: mcp.ModelContextProtocol.ListTools:input_type -> mcp.ListToolsRequest
+	11, // 71: mcp.ModelContextProtocol.ListPrompts:input_type -> mcp.ListPromptsRequest
+	13, // 72: mcp.ModelContextProtocol.GetPrompt:input_type -> mcp.GetPromptRequest
+	7,  // 73: mcp.ModelContextProtocol.Complete:input_type -> mcp.CompleteRequest
+	9,  // 74: mcp.ModelContextProtocol.Ping:input_type -> mcp.PingRequest
+	2,  // 75: mcp.ModelContextProtocol.Initialize:output_type -> mcp.InitializeResult
+	6,  // 76: mcp.ModelContextProtocol.CallMethod:output_type -> mcp.CallToolResult
+	4,  // 77: mcp.ModelContextProtocol.ListTools:output_type -> mcp.ListToolsResult
+	12, // 78: mcp.ModelContextProtocol.ListPrompts:output_type -> mcp.ListPromptsResult
+	14, // 79: mcp.ModelContextProtocol.GetPrompt:output_type -> mcp.GetPromptResult
+	8,  // 80: mcp.ModelContextProtocol.Complete:output_type -> mcp.CompleteResult
+	10, // 81: mcp.ModelContextProtocol.Ping:output_type -> mcp.PingResult
+	75, // [75:82] is the sub-list for method output_type
+	68, // [68:75] is the sub-list for method input_type
+	68, // [68:68] is the sub-list for extension type_name
+	68, // [68:68] is the sub-list for extension extendee
+	0,  // [0:68] is the sub-list for field type_name
 }
 
 func init() { file_mcp_proto_init() }
@@ -3172,7 +3187,7 @@ func file_mcp_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mcp_proto_rawDesc), len(file_mcp_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   47,
+			NumMessages:   48,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

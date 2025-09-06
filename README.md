@@ -45,6 +45,9 @@ go run main.go proxy --port 8080 --mcp-url http://localhost:8888/mcp/
 ### Example Usage with `grpcurl`
 
 Once the proxy is running, you can use tools like `grpcurl` to try things out. 
+
+#### Tools
+
 The following call examples with `add`, `mult` and `lower` tools with appropriate 
 arguments after first initiailizing an MCP session:
 
@@ -93,11 +96,20 @@ grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
 }
 EOF
 
-# and finally ping
+# simple ping
 grpcurl -v -H "${MCP_SESSION_HEADER}" -plaintext localhost:8080 mcp.ModelContextProtocol/Ping
+
+# and prompts
+grpcurl -H "${MCP_SESSION_HEADER}" -plaintext  localhost:8080    mcp.ModelContextProtocol/ListPrompts
+grpcurl -H "${MCP_SESSION_HEADER}" -plaintext -d '{"name": "greet"}' \
+    localhost:8080    mcp.ModelContextProtocol/GetPrompt
+
+
 ```
 
 ### Example with github's MCP server
+
+```
 
 
 ```bash

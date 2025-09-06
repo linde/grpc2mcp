@@ -103,7 +103,8 @@ message Prompt {
     string name = 1;
     optional string title = 2;
     repeated ContentBlock content = 3;
-    optional google.protobuf.Struct _meta = 4;
+    map<string, JSONSchema> params = 4;
+    optional google.protobuf.Struct _meta = 5;
 }
 
 

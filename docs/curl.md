@@ -8,13 +8,12 @@ or point to your favorite other MCP server.
 
 
 ```bash
-export PORT=8888
-export URI=/
+export MCP_URL=http://localhost:8888/mcp
 
 # start initialization
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
     -H "Content-Type: application/json" \
-     -d @- http://localhost:${PORT}${URI} <<EOF
+     -d @- ${MCP_URL} <<EOF
 { 
     "jsonrpc": "2.0", 
     "id": "1", 
@@ -34,21 +33,21 @@ export MCP_SESSION_ID=[get it from above curl call response header]
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
     -H "Content-Type: application/json" \
     -H "mcp-session-id: ${MCP_SESSION_ID}" \
-    -d '{ "jsonrpc": "2.0", "method": "notifications/initialized"}' http://localhost:${PORT}${URI}
+    -d '{ "jsonrpc": "2.0", "method": "notifications/initialized"}' ${MCP_URL}
 
 
 # then, list what's available
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
     -H "Content-Type: application/json" \
     -H "mcp-session-id: ${MCP_SESSION_ID}" \
-    -d '{ "jsonrpc": "2.0", "id": 1, "method": "tools/list"}' http://localhost:${PORT}${URI}
+    -d '{ "jsonrpc": "2.0", "id": 1, "method": "tools/list"}' ${MCP_URL}
 
 # then make tool calls!
 
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
      -H "Content-Type: application/json" \
      -H "mcp-session-id: ${MCP_SESSION_ID}" \
-     -d @- http://localhost:${PORT}${URI} <<EOF
+     -d @- ${MCP_URL} <<EOF
 {
     "jsonrpc": "2.0",
     "id": "1",
@@ -67,7 +66,7 @@ EOF
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
      -H "Content-Type: application/json" \
      -H "mcp-session-id: ${MCP_SESSION_ID}" \
-     http://localhost:${PORT}/mcp -d @- <<EOF
+     ${MCP_URL} -d @- <<EOF
 {
   "jsonrpc": "2.0",
   "id": 1,
@@ -90,7 +89,7 @@ EOF
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
      -H "Content-Type: application/json" \
      -H "mcp-session-id: ${MCP_SESSION_ID}" \
-     -d @- http://localhost:${PORT}/mcp <<EOF
+     -d @- ${MCP_URL} <<EOF
 {
   "jsonrpc": "2.0",
   "id": "123",

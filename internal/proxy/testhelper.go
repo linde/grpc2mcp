@@ -145,8 +145,8 @@ func doGrpcProxyPromptTests(ctx context.Context, mcpGrpcClient pb.ModelContextPr
 	}
 
 	var promptNamesExpected []string
-	for name := range examplemcp.PromptsProvided {
-		promptNamesExpected = append(promptNamesExpected, name)
+	for _, promptProvided := range examplemcp.PromptsProvided {
+		promptNamesExpected = append(promptNamesExpected, promptProvided.Prompt.Name)
 	}
 
 	var promptNamesProvided []string
