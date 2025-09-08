@@ -22,7 +22,7 @@ func TestTrivyServerTools(t *testing.T) {
 	defer ts.Close()
 	assert.NotNil(ts)
 
-	log.Printf("mcp handler listening on: %s", ts.URL)
+	log.Printf("mcp handler listening on: %s%s", ts.URL, exampleMcpServerUri)
 
 	ctx := context.Background()
 

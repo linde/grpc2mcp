@@ -199,10 +199,78 @@ func (s *Server) Initialize(ctx context.Context, req *mcp.InitializeRequest) (*m
 
 // CallMethod implements the CallMethod RPC.
 func (s *Server) CallMethod(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var result mcp.CallToolResult
-	err := s.doRpcCall(ctx, req, mcpconst.ToolsCall, &result)
-	return &result, err
+	return s.doCallMethodRpc(ctx, req)
 }
+
+// doCallMethodRpc handles the specific logic for unmarshaling the polymorphic
+// content in a CallToolResult.
+func (s *Server) doCallMethodRpc(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	additionalHeaders := initHeadersFromContext(ctx)
+	httpReq, err := jsonrpc.NewJSONRPCRequest(ctx, s.mcpUrl, mcpconst.ToolsCall, req, additionalHeaders, http.NewRequestWithContext)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to create http request for %s: %v", mcpconst.ToolsCall, err)
+	}
+
+	resp, _, err := jsonrpc.DoRequest(ctx, &s.httpClient, httpReq)
+	if err != nil {
+		return nil, err // DoRequest already wraps the error.
+	}
+
+	if resp == nil {
+		return nil, status.Errorf(codes.Internal, "MCP server returned a nil response")
+	}
+
+	if resp.Error != nil {
+		return nil, status.Errorf(codes.Aborted, "MCP server returned an error (code %d): %s",
+			resp.Error.Code, resp.Error.Message)
+	}
+
+	if resp.Result == nil {
+		return nil, status.Errorf(codes.Internal, "MCP server returned a nil result")
+	}
+
+	// Custom unmarshaling for CallToolResult
+	var rawResult struct {
+		Content           []json.RawMessage `json:"content"`
+		StructuredContent json.RawMessage `json:"structuredContent"`
+		IsError           bool              `json:"isError"`
+	}
+
+	if err := json.Unmarshal(*resp.Result, &rawResult); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to unmarshal raw result from mcp server: %v", err)
+	}
+
+	finalResult := &mcp.CallToolResult{
+		IsError: &rawResult.IsError,
+	}
+
+	for _, rawContent := range rawResult.Content {
+		var typeProbe struct {
+			Type string `json:"type"`
+		}
+		if err := json.Unmarshal(rawContent, &typeProbe); err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to probe content type: %v", err)
+		}
+
+		var contentBlock mcp.ContentBlock
+		switch typeProbe.Type {
+		case "text":
+			var textContent mcp.TextContent
+			if err := json.Unmarshal(rawContent, &textContent); err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to unmarshal TextContent: %v", err)
+			}
+			contentBlock.ContentType = &mcp.ContentBlock_Text{Text: &textContent}
+		// TODO: Add cases for ImageContent, AudioContent, etc. as needed
+		default:
+			log.Printf("unknown content type: %s", typeProbe.Type)
+			continue
+		}
+		finalResult.Content = append(finalResult.Content, &contentBlock)
+	}
+
+	return finalResult, nil
+}
+
 
 // ListTools implements the ListTools RPC.
 func (s *Server) ListTools(ctx context.Context, req *mcp.ListToolsRequest) (*mcp.ListToolsResult, error) {

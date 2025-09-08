@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"context"
-	"grpc2mcp/internal/examplemcp"
+	examplemcp "grpc2mcp/internal/examplemcpserver"
 	"grpc2mcp/pb"
 	"log"
 	"net"
@@ -20,7 +20,7 @@ func TestBufconDirect(t *testing.T) {
 	assert := asserts.New(t)
 	assert.NotNil(assert)
 
-	handler := examplemcp.RunTrivyServer(t.Name())
+	handler := examplemcp.RunExampleMcpServer(t.Name(), "/mcp")
 
 	ts := httptest.NewServer(handler)
 	defer ts.Close()

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"grpc2mcp/internal/examplemcp"
+	examplemcp "grpc2mcp/internal/examplemcpserver"
 	"grpc2mcp/internal/mcpconst"
 	"grpc2mcp/pb"
 	"log"
@@ -71,18 +71,31 @@ func doGrpcProxyToolTests(ctx context.Context, mcpGrpcClient pb.ModelContextProt
 	for _, tc := range []struct {
 		tool     string
 		args     map[string]any
-		expected any
+		expected string
+		isError  bool
 	}{
-		{"add", map[string]any{"a": 1, "b": 10}, 11.0},
-		{"add", map[string]any{"a": 1}, 1.0},
-		{"add", map[string]any{"b": 1}, 1.0},
-		{"add", map[string]any{"a": 0, "b": 10}, 10.0},
-		{"add", map[string]any{"a": 1, "b": -10}, -9.0},
-		{"mult", map[string]any{"a": 11, "b": 3}, 33.0},
-		{"mult", map[string]any{"a": 0, "b": 3}, 0.0},
-		{"lower", map[string]any{"s": "MixedCase"}, "mixedcase"},
-		{"lower", map[string]any{"s": ""}, ""},
-		{"lower", map[string]any{}, ""},
+		{"add", map[string]any{"a": 1, "b": 10}, "11", false},
+		{"add", map[string]any{"a": 0, "b": 10}, "10", false},
+		{"add", map[string]any{"a": 10, "b": 0}, "10", false},
+		{"add", map[string]any{"a": -10, "b": 5}, "-5", false},
+		{"add", map[string]any{"a": 5, "b": -10}, "-5", false},
+
+		{"add", map[string]any{"a": 1}, `required argument "b" not found`, true},
+		{"add", map[string]any{"b": 1}, `required argument "a" not found`, true},
+
+		{"mult", map[string]any{"a": 1, "b": 10}, "10", false},
+		{"mult", map[string]any{"a": 0, "b": 10}, "0", false},
+		{"mult", map[string]any{"a": 10, "b": 0}, "0", false},
+		{"mult", map[string]any{"a": -10, "b": 5}, "-50", false},
+		{"mult", map[string]any{"a": 5, "b": -10}, "-50", false},
+
+		{"mult", map[string]any{"a": 1}, `required argument "b" not found`, true},
+		{"mult", map[string]any{"b": 1}, `required argument "a" not found`, true},
+
+		{"lower", map[string]any{"s": "MixedCase"}, "mixedcase", false},
+		{"lower", map[string]any{"s": ""}, "", false},
+
+		{"lower", map[string]any{}, `required argument "s" not found`, true},
 	} {
 		log.Printf("CallMethod: %s %v", tc.tool, tc.args)
 
@@ -103,25 +116,35 @@ func doGrpcProxyToolTests(ctx context.Context, mcpGrpcClient pb.ModelContextProt
 			return fmt.Errorf("nil method result from CallMethod()")
 		}
 
-		resultField := callMethodResult.GetStructuredContent().GetFields()["result"]
-		if resultField == nil {
-			return fmt.Errorf("nil resultField from CallMethod()")
+		if callMethodResult.GetIsError() != tc.isError {
+			failStr := fmt.Sprintf("%s %v, expected isError %v, observed %v", tc.tool, tc.args, tc.isError, callMethodResult.GetIsError())
+			failedAssertions = append(failedAssertions, failStr)
+			continue // Continue to the next test case
 		}
 
-		switch expected := tc.expected.(type) {
-		case float64:
-			if expected != resultField.GetNumberValue() {
-				failStr := fmt.Sprintf("%s %v, exepected %v, observed %v", tc.tool, tc.args, expected, resultField.GetNumberValue())
-				failedAssertions = append(failedAssertions, failStr)
+		contentItems := callMethodResult.GetContent()
+
+		if len(contentItems) != 1 {
+			// Only fail if we are not expecting an error. Error responses might not have content.
+			if !tc.isError {
+				return fmt.Errorf("expected 1 content item, got %d", len(contentItems))
 			}
-		case string:
-			if expected != resultField.GetStringValue() {
-				failStr := fmt.Sprintf("%s %v, exepected %v, observed %v", tc.tool, tc.args, expected, resultField.GetStringValue())
+			// If we expect an error and there's no content, that's fine.
+			if len(contentItems) == 0 {
+				continue
+			}
+		}
+
+		// TODO add other tests for other content types: ImageContent, AudioContent or a ResourceLink
+		switch c := contentItems[0].ContentType.(type) {
+		case *pb.ContentBlock_Text:
+			actualResult := c.Text.Text
+			if actualResult != tc.expected {
+				failStr := fmt.Sprintf("%s %v, exepected %v, observed %v", tc.tool, tc.args, tc.expected, actualResult)
 				failedAssertions = append(failedAssertions, failStr)
 			}
 		default:
-			failStr := fmt.Sprintf("%s %v, unhandled type %T", tc.tool, tc.args, expected)
-			failedAssertions = append(failedAssertions, failStr)
+			return fmt.Errorf("unexpected content type: %T", c)
 		}
 	}
 
@@ -146,7 +169,7 @@ func doGrpcProxyPromptTests(ctx context.Context, mcpGrpcClient pb.ModelContextPr
 
 	var promptNamesExpected []string
 	for _, promptProvided := range examplemcp.PromptsProvided {
-		promptNamesExpected = append(promptNamesExpected, promptProvided.Prompt.Name)
+		promptNamesExpected = append(promptNamesExpected, promptProvided.GetName())
 	}
 
 	var promptNamesProvided []string
@@ -171,7 +194,7 @@ func SetupAsyncMcpAndProxy(mcpServerName string) (pb.ModelContextProtocolClient,
 
 	closeLine := &CloseLine{}
 
-	handler := examplemcp.RunTrivyServer(mcpServerName)
+	handler := examplemcp.RunExampleMcpServer(mcpServerName, "/mcp")
 	ts := httptest.NewServer(handler)
 	closeLine.Add(ts.Close)
 	log.Printf("mcp handler listening on: %s", ts.URL)
