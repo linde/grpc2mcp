@@ -62,6 +62,22 @@ curl -i -X POST -H "Accept: application/json, text/event-stream" \
 }   
 EOF
 
+
+curl -i -X POST -H "Accept: application/json, text/event-stream" \
+     -H "Content-Type: application/json" \
+     -H "mcp-session-id: ${MCP_SESSION_ID}" \
+     -d @- ${MCP_URL} <<EOF
+{
+    "jsonrpc": "2.0",
+    "id": "1",
+    "method": "tools/call",
+    "params": {
+      "name": "greetResource",
+      "arguments": {"whom": "linde"}
+    }
+}   
+EOF
+
 # send a completion request
 curl -i -X POST -H "Accept: application/json, text/event-stream" \
      -H "Content-Type: application/json" \

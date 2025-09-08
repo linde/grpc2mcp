@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"context"
-	examplemcp "grpc2mcp/internal/examplemcpserver"
+	"grpc2mcp/internal/examplemcp"
 	"grpc2mcp/pb"
 	"log"
 	"net"

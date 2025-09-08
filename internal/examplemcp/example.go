@@ -4,10 +4,25 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+)
+
+const (
+	PARAM_WHOM = "whom"
+	PARAM_A    = "a"
+	PARAM_B    = "b"
+	PARAM_S    = "s"
+
+	TOOL_ADD            = "add"
+	TOOL_MULT           = "mult"
+	TOOL_LOWER          = "lower"
+	TOOL_GREET_RESOURCE = "greetResource"
+
+	PROMPT_GREET = "greet"
 )
 
 type ProvidedTool struct {
@@ -22,24 +37,30 @@ func (pt ProvidedTool) GetName() string {
 // TODO consider inlining this type if it isnt used outside the package
 var ToolsProvided = []ProvidedTool{
 	{
-		mcp.NewTool("add",
+		mcp.NewTool(TOOL_ADD,
 			mcp.WithDescription("Add two numbers"),
-			mcp.WithNumber("a", mcp.Required()),
-			mcp.WithNumber("b", mcp.Required()),
+			mcp.WithNumber(PARAM_A, mcp.Required()),
+			mcp.WithNumber(PARAM_B, mcp.Required()),
 		), doMath,
 	},
 	{
-		mcp.NewTool("mult",
+		mcp.NewTool(TOOL_MULT,
 			mcp.WithDescription("Mulitply two numbers"),
-			mcp.WithNumber("a", mcp.Required()),
-			mcp.WithNumber("b", mcp.Required()),
+			mcp.WithNumber(PARAM_A, mcp.Required()),
+			mcp.WithNumber(PARAM_B, mcp.Required()),
 		), doMath,
 	},
 	{
-		mcp.NewTool("lower",
+		mcp.NewTool(TOOL_LOWER,
 			mcp.WithDescription("lower case a string"),
-			mcp.WithNumber("l", mcp.Required()),
+			mcp.WithString(PARAM_S, mcp.Required()),
 		), doLower,
+	},
+	{
+		mcp.NewTool(TOOL_GREET_RESOURCE,
+			mcp.WithDescription("example to get a greeting via a resource"),
+			mcp.WithString(PARAM_WHOM, mcp.Required()),
+		), doToolWithResourceLink,
 	},
 }
 
@@ -54,9 +75,10 @@ func (pp ProvidedPrompt) GetName() string {
 
 var PromptsProvided = []ProvidedPrompt{
 	{
-		mcp.NewPrompt("greet",
+		mcp.NewPrompt(
+			PROMPT_GREET,
 			mcp.WithPromptDescription("A prompt that greets the user"),
-			mcp.WithArgument("whom", mcp.ArgumentDescription("whom gets greeted"), mcp.RequiredArgument()),
+			mcp.WithArgument(PARAM_WHOM, mcp.ArgumentDescription("whom gets greeted"), mcp.RequiredArgument()),
 		), doGreetPrompt,
 	},
 }
@@ -88,19 +110,19 @@ func RunExampleMcpServer(serverName string, uri string) http.Handler {
 
 func doMath(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 
-	a, err := request.RequireFloat("a")
+	a, err := request.RequireFloat(PARAM_A)
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
-	b, err := request.RequireFloat("b")
+	b, err := request.RequireFloat(PARAM_B)
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
 
 	switch request.Params.Name {
-	case "add":
+	case TOOL_ADD:
 		return mcp.NewToolResultText(fmt.Sprintf("%v", a+b)), nil
-	case "mult":
+	case TOOL_MULT:
 		return mcp.NewToolResultText(fmt.Sprintf("%v", a*b)), nil
 	}
 
@@ -109,11 +131,32 @@ func doMath(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResu
 
 func doLower(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 
-	s, err := request.RequireString("s")
+	s, err := request.RequireString(PARAM_S)
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil
 	}
 	return mcp.NewToolResultText(strings.ToLower(s)), nil
+}
+
+func doToolWithResourceLink(_ context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+
+	whoParam, err := request.RequireString(PARAM_WHOM)
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	escapedGreetingStr := url.QueryEscape(fmt.Sprintf("Hello, %s!", whoParam))
+	mimeType := "text/plain"
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			mcp.NewResourceLink(
+				fmt.Sprintf("data:%s", escapedGreetingStr),
+				fmt.Sprintf("Sample %s", request.Method),
+				fmt.Sprintf("A sample %s for demonstration", request.Method),
+				mimeType,
+			),
+		},
+	}, nil
 }
 
 // TODO get something more idiomatic. this is just a call repsonse

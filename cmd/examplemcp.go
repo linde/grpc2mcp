@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	examplemcp "grpc2mcp/internal/examplemcpserver"
+	"grpc2mcp/internal/examplemcp"
 	"log"
 	"net/http"
 	"time"

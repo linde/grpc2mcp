@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	examplemcp "grpc2mcp/internal/examplemcpserver"
+
+	"grpc2mcp/internal/examplemcp"
 	"grpc2mcp/internal/mcpconst"
 	"grpc2mcp/pb"
 	"log"
@@ -21,6 +22,8 @@ import (
 
 // This file contains tests that we run e2e via network gRPC and also directly
 // in process via bufcon.
+
+// TODO just go ahead and pass a test T in here
 
 func doGrpcProxyTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) error {
 
@@ -74,28 +77,30 @@ func doGrpcProxyToolTests(ctx context.Context, mcpGrpcClient pb.ModelContextProt
 		expected string
 		isError  bool
 	}{
-		{"add", map[string]any{"a": 1, "b": 10}, "11", false},
-		{"add", map[string]any{"a": 0, "b": 10}, "10", false},
-		{"add", map[string]any{"a": 10, "b": 0}, "10", false},
-		{"add", map[string]any{"a": -10, "b": 5}, "-5", false},
-		{"add", map[string]any{"a": 5, "b": -10}, "-5", false},
+		{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 1, examplemcp.PARAM_B: 10}, "11", false},
+		{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 0, examplemcp.PARAM_B: 10}, "10", false},
+		{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 10, examplemcp.PARAM_B: 0}, "10", false},
+		{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: -10, examplemcp.PARAM_B: 5}, "-5", false},
+		{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 5, examplemcp.PARAM_B: -10}, "-5", false},
 
-		{"add", map[string]any{"a": 1}, `required argument "b" not found`, true},
-		{"add", map[string]any{"b": 1}, `required argument "a" not found`, true},
+		{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 1}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_B), true},
+		{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_B: 1}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_A), true},
 
-		{"mult", map[string]any{"a": 1, "b": 10}, "10", false},
-		{"mult", map[string]any{"a": 0, "b": 10}, "0", false},
-		{"mult", map[string]any{"a": 10, "b": 0}, "0", false},
-		{"mult", map[string]any{"a": -10, "b": 5}, "-50", false},
-		{"mult", map[string]any{"a": 5, "b": -10}, "-50", false},
+		{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 1, examplemcp.PARAM_B: 10}, "10", false},
+		{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 0, examplemcp.PARAM_B: 10}, "0", false},
+		{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 10, examplemcp.PARAM_B: 0}, "0", false},
+		{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: -10, examplemcp.PARAM_B: 5}, "-50", false},
+		{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 5, examplemcp.PARAM_B: -10}, "-50", false},
 
-		{"mult", map[string]any{"a": 1}, `required argument "b" not found`, true},
-		{"mult", map[string]any{"b": 1}, `required argument "a" not found`, true},
+		{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 1}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_B), true},
+		{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_B: 1}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_A), true},
 
-		{"lower", map[string]any{"s": "MixedCase"}, "mixedcase", false},
-		{"lower", map[string]any{"s": ""}, "", false},
+		{examplemcp.TOOL_LOWER, map[string]any{examplemcp.PARAM_S: "MixedCase"}, "mixedcase", false},
+		{examplemcp.TOOL_LOWER, map[string]any{examplemcp.PARAM_S: ""}, "", false},
 
-		{"lower", map[string]any{}, `required argument "s" not found`, true},
+		{examplemcp.TOOL_LOWER, map[string]any{}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_S), true},
+
+		{examplemcp.TOOL_GREET_RESOURCE, map[string]any{examplemcp.PARAM_WHOM: "yer mom"}, "data:Hello%2C+yer+mom%21", false},
 	} {
 		log.Printf("CallMethod: %s %v", tc.tool, tc.args)
 
@@ -139,6 +144,12 @@ func doGrpcProxyToolTests(ctx context.Context, mcpGrpcClient pb.ModelContextProt
 		switch c := contentItems[0].ContentType.(type) {
 		case *pb.ContentBlock_Text:
 			actualResult := c.Text.Text
+			if actualResult != tc.expected {
+				failStr := fmt.Sprintf("%s %v, exepected %v, observed %v", tc.tool, tc.args, tc.expected, actualResult)
+				failedAssertions = append(failedAssertions, failStr)
+			}
+		case *pb.ContentBlock_ResourceLink:
+			actualResult := c.ResourceLink.Resource.Uri
 			if actualResult != tc.expected {
 				failStr := fmt.Sprintf("%s %v, exepected %v, observed %v", tc.tool, tc.args, tc.expected, actualResult)
 				failedAssertions = append(failedAssertions, failStr)

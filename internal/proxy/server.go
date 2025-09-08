@@ -11,6 +11,7 @@ import (
 
 	"grpc2mcp/internal/jsonrpc"
 	"grpc2mcp/internal/mcpconst"
+	"grpc2mcp/pb"
 	mcp "grpc2mcp/pb"
 
 	"google.golang.org/grpc"
@@ -232,7 +233,7 @@ func (s *Server) doCallMethodRpc(ctx context.Context, req *mcp.CallToolRequest) 
 	// Custom unmarshaling for CallToolResult
 	var rawResult struct {
 		Content           []json.RawMessage `json:"content"`
-		StructuredContent json.RawMessage `json:"structuredContent"`
+		StructuredContent json.RawMessage   `json:"structuredContent"`
 		IsError           bool              `json:"isError"`
 	}
 
@@ -260,6 +261,13 @@ func (s *Server) doCallMethodRpc(ctx context.Context, req *mcp.CallToolRequest) 
 				return nil, status.Errorf(codes.Internal, "failed to unmarshal TextContent: %v", err)
 			}
 			contentBlock.ContentType = &mcp.ContentBlock_Text{Text: &textContent}
+		case "resource_link":
+			var resource mcp.Resource
+			if err := json.Unmarshal(rawContent, &resource); err != nil {
+				return nil, status.Errorf(codes.Internal, "failed to unmarshal ResourceLink: %v", err)
+			}
+			resourceLink := pb.ResourceLink{Type: typeProbe.Type, Resource: &resource}
+			contentBlock.ContentType = &mcp.ContentBlock_ResourceLink{ResourceLink: &resourceLink}
 		// TODO: Add cases for ImageContent, AudioContent, etc. as needed
 		default:
 			log.Printf("unknown content type: %s", typeProbe.Type)
@@ -270,7 +278,6 @@ func (s *Server) doCallMethodRpc(ctx context.Context, req *mcp.CallToolRequest) 
 
 	return finalResult, nil
 }
-
 
 // ListTools implements the ListTools RPC.
 func (s *Server) ListTools(ctx context.Context, req *mcp.ListToolsRequest) (*mcp.ListToolsResult, error) {
@@ -304,7 +311,6 @@ func (s *Server) GetPrompt(ctx context.Context, req *mcp.GetPromptRequest) (*mcp
 	err := s.doRpcCall(ctx, req, "prompts/get", &result)
 	return &result, err
 }
-
 
 // This is the heart of doing a session jsonrpc call and unpacking, then deserializing the result.
 func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage,

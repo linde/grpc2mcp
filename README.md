@@ -54,11 +54,12 @@ arguments after first initiailizing an MCP session:
 
 ```bash
 
-# first initialize to see the whole response
+# first initialize to see the whole response -- this covers Initialize and Initialized
  grpcurl -v -plaintext   localhost:8080  mcp.ModelContextProtocol/Initialize
 
 # try it again with grep to capture the value of the "mcp-session-id" header line
 MCP_SESSION_HEADER=$(grpcurl -v -plaintext   localhost:8080  mcp.ModelContextProtocol/Initialize | grep mcp-session-id)
+
 
 # now use that header with the session id to make any other calls
 grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
@@ -73,6 +74,9 @@ grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
     -d '{"name": "lower", "arguments": {"s": "thisIsMixedCase"}}' \
     localhost:8080 mcp.ModelContextProtocol/CallMethod
 
+grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
+    -d '{"name": "greetResouce", "arguments": {"whom": "linde"}}' \
+    localhost:8080 mcp.ModelContextProtocol/CallMethod
 
 # also we can call to list the tools
 grpcurl -H "${MCP_SESSION_HEADER}" -plaintext localhost:8080 mcp.ModelContextProtocol/ListTools
