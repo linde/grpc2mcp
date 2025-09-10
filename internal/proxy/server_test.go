@@ -9,16 +9,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	asserts "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 )
 
 func TestBufconDirect(t *testing.T) {
-
-	assert := asserts.New(t)
-	assert.NotNil(assert)
 
 	handler := examplemcp.RunExampleMcpServer(t.Name(), "/mcp")
 
@@ -27,33 +24,31 @@ func TestBufconDirect(t *testing.T) {
 
 	log.Printf("mcp handler listening on: %s", ts.URL)
 	s, err := NewServer(ts.URL)
-	assert.NoError(err)
+	require.NoError(t, err)
 
 	const bufSize = 1024 * 1024
 	lis := bufconn.Listen(bufSize)
 	serverCancel, err := s.StartProxyToListenerAsync(lis)
-	assert.NoError(err)
+	require.NoError(t, err)
 	defer serverCancel()
 
 	bufDialer := func(context.Context, string) (net.Conn, error) { return lis.Dial() }
 	conn, err := grpc.NewClient("passthrough:///bufnet", grpc.WithContextDialer(bufDialer),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
-	if err != nil {
-		assert.NoError(err)
-		return
-	}
+	require.NoError(t, err)
+
 	defer conn.Close()
 
 	mcpGrpcClient := pb.NewModelContextProtocolClient(conn)
 
 	err = doGrpcProxyTests(context.Background(), mcpGrpcClient)
-	assert.NoError(err)
+	require.NoError(t, err)
 
 	err = doGrpcProxyToolTests(context.Background(), mcpGrpcClient)
-	assert.NoError(err)
+	require.NoError(t, err)
 
 	err = doGrpcProxyPromptTests(context.Background(), mcpGrpcClient)
-	assert.NoError(err)
+	require.NoError(t, err)
 
 }

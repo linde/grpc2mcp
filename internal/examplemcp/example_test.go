@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTrivyServerTools(t *testing.T) {
@@ -42,7 +43,7 @@ func TestTrivyServerTools(t *testing.T) {
 	noAddlHeaders := map[string]string{} // no headers
 	initReq, err := jsonrpc.NewJSONRPCRequest(ctx, exampleMcpServerUri, mcpconst.Initialize,
 		initParams, noAddlHeaders, testNewRequesterFunc)
-	assert.NoError(err)
+	require.NoError(t, err)
 
 	initRR := httptest.NewRecorder()
 	handler.ServeHTTP(initRR, initReq)
@@ -56,7 +57,7 @@ func TestTrivyServerTools(t *testing.T) {
 	sessionIdHeader := map[string]string{mcpconst.MCP_SESSION_ID_HEADER: sessionID}
 	initializedReq, err := jsonrpc.NewJSONRPCRequest(ctx, exampleMcpServerUri,
 		mcpconst.NotificationsInitialized, nil, sessionIdHeader, testNewRequesterFunc)
-	assert.NoError(err)
+	require.NoError(t, err)
 
 	initializedRR := httptest.NewRecorder()
 	handler.ServeHTTP(initializedRR, initializedReq)

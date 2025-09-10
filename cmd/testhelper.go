@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func runSubCommand(t *testing.T, cmd *cobra.Command, wait time.Duration, outputAssertions []string) {
@@ -26,7 +27,7 @@ func runSubCommand(t *testing.T, cmd *cobra.Command, wait time.Duration, outputA
 		defer wg.Done()
 		cmd.SetContext(cancelableCtx)
 		commandOutputStr, err := CommandRunner(cmd)
-		assert.NoError(err)
+		require.NoError(t, err)
 
 		lowerCommandOutputStr := strings.ToLower(commandOutputStr)
 		for _, oa := range outputAssertions {
