@@ -39,11 +39,7 @@ func doGrpcProxyTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocol
 	log.Printf("ping: %v", PingResult)
 
 	// this tests our ListTools rpc making sure that our target tools are present
-	toolsExpected := []string{}
-	for _, providedTool := range examplemcp.ToolsProvided {
-		toolsExpected = append(toolsExpected, providedTool.GetName())
-	}
-	sort.Strings(toolsExpected)
+	toolsExpected := examplemcp.GetProvidedToolNames()
 
 	toolsFound := []string{}
 	listToolsResult, err := mcpGrpcClient.ListTools(sessionCtx, &pb.ListToolsRequest{})
@@ -209,10 +205,7 @@ func doGrpcProxyPromptTests(ctx context.Context, mcpGrpcClient pb.ModelContextPr
 		return err
 	}
 
-	var promptNamesExpected []string
-	for _, promptProvided := range examplemcp.PromptsProvided {
-		promptNamesExpected = append(promptNamesExpected, promptProvided.GetName())
-	}
+	promptNamesExpected := examplemcp.GetProvidedPrompts()
 
 	var promptNamesProvided []string
 	for _, p := range listPromptResult.GetPrompts() {
@@ -220,7 +213,7 @@ func doGrpcProxyPromptTests(ctx context.Context, mcpGrpcClient pb.ModelContextPr
 	}
 
 	if !reflect.DeepEqual(promptNamesExpected, promptNamesProvided) {
-		return fmt.Errorf("tools expected %v not equal tools found %v", promptNamesExpected, promptNamesProvided)
+		return fmt.Errorf("prompts expected %v not equal tools found %v", promptNamesExpected, promptNamesProvided)
 	}
 
 	// TODO make some assertions about the prompt

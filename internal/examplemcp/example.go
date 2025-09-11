@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -27,17 +28,21 @@ const (
 	PROMPT_GREET = "greet"
 )
 
-type ProvidedTool struct {
+func GetProvidedToolNames() []string {
+
+	names := make([]string, len(toolsProvided))
+
+	for idx, providedTool := range toolsProvided {
+		names[idx] = providedTool.tool.GetName()
+	}
+	sort.Strings(names)
+	return names
+}
+
+var toolsProvided = []struct {
 	tool    mcp.Tool
 	handler server.ToolHandlerFunc
-}
-
-func (pt ProvidedTool) GetName() string {
-	return pt.tool.Name
-}
-
-// TODO consider inlining this type if it isnt used outside the package
-var ToolsProvided = []ProvidedTool{
+}{
 	{
 		mcp.NewTool(TOOL_ADD,
 			mcp.WithDescription("Add two numbers"),
@@ -66,16 +71,21 @@ var ToolsProvided = []ProvidedTool{
 	},
 }
 
-type ProvidedPrompt struct {
+func GetProvidedPrompts() []string {
+
+	names := make([]string, len(promptsProvided))
+
+	for idx, providedTool := range promptsProvided {
+		names[idx] = providedTool.prompt.GetName()
+	}
+	sort.Strings(names)
+	return names
+}
+
+var promptsProvided = []struct {
 	prompt  mcp.Prompt
 	handler server.PromptHandlerFunc
-}
-
-func (pp ProvidedPrompt) GetName() string {
-	return pp.prompt.Name
-}
-
-var PromptsProvided = []ProvidedPrompt{
+}{
 	{
 		mcp.NewPrompt(
 			PROMPT_GREET,
@@ -98,11 +108,11 @@ func RunExampleMcpServer(serverName string, uri string) http.Handler {
 	)
 
 	// Add the tools/prompts
-	for _, tp := range ToolsProvided {
+	for _, tp := range toolsProvided {
 		s.AddTool(tp.tool, tp.handler)
 	}
 
-	for _, pp := range PromptsProvided {
+	for _, pp := range promptsProvided {
 		s.AddPrompt(pp.prompt, pp.handler)
 	}
 
