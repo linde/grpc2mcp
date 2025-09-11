@@ -113,4 +113,33 @@ curl -i -X POST -H "Accept: application/json, text/event-stream" \
 }
 EOF
 
+# how about a resource?
+
+curl -i -X POST -H "Accept: application/json, text/event-stream" \
+     -H "Content-Type: application/json" \
+     -H "mcp-session-id: ${MCP_SESSION_ID}" \
+     ${MCP_URL} -d @- <<EOF
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "resources/list"
+}
+EOF
+
+curl -i -X POST -H "Accept: application/json, text/event-stream" \
+     -H "Content-Type: application/json" \
+     -H "mcp-session-id: ${MCP_SESSION_ID}" \
+     ${MCP_URL} -d @- <<EOF
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "resources/read",
+  "params": {
+    "uri": "test://static/resource"
+  }
+}
+EOF
+
+
+
 ```

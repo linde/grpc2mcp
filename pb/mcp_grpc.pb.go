@@ -19,13 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ModelContextProtocol_Initialize_FullMethodName  = "/mcp.ModelContextProtocol/Initialize"
-	ModelContextProtocol_CallMethod_FullMethodName  = "/mcp.ModelContextProtocol/CallMethod"
-	ModelContextProtocol_ListTools_FullMethodName   = "/mcp.ModelContextProtocol/ListTools"
-	ModelContextProtocol_ListPrompts_FullMethodName = "/mcp.ModelContextProtocol/ListPrompts"
-	ModelContextProtocol_GetPrompt_FullMethodName   = "/mcp.ModelContextProtocol/GetPrompt"
-	ModelContextProtocol_Complete_FullMethodName    = "/mcp.ModelContextProtocol/Complete"
-	ModelContextProtocol_Ping_FullMethodName        = "/mcp.ModelContextProtocol/Ping"
+	ModelContextProtocol_Initialize_FullMethodName            = "/mcp.ModelContextProtocol/Initialize"
+	ModelContextProtocol_CallMethod_FullMethodName            = "/mcp.ModelContextProtocol/CallMethod"
+	ModelContextProtocol_ListTools_FullMethodName             = "/mcp.ModelContextProtocol/ListTools"
+	ModelContextProtocol_ListPrompts_FullMethodName           = "/mcp.ModelContextProtocol/ListPrompts"
+	ModelContextProtocol_GetPrompt_FullMethodName             = "/mcp.ModelContextProtocol/GetPrompt"
+	ModelContextProtocol_ListResources_FullMethodName         = "/mcp.ModelContextProtocol/ListResources"
+	ModelContextProtocol_ListResourceTemplates_FullMethodName = "/mcp.ModelContextProtocol/ListResourceTemplates"
+	ModelContextProtocol_Complete_FullMethodName              = "/mcp.ModelContextProtocol/Complete"
+	ModelContextProtocol_Ping_FullMethodName                  = "/mcp.ModelContextProtocol/Ping"
 )
 
 // ModelContextProtocolClient is the client API for ModelContextProtocol service.
@@ -37,6 +39,8 @@ type ModelContextProtocolClient interface {
 	ListTools(ctx context.Context, in *ListToolsRequest, opts ...grpc.CallOption) (*ListToolsResult, error)
 	ListPrompts(ctx context.Context, in *ListPromptsRequest, opts ...grpc.CallOption) (*ListPromptsResult, error)
 	GetPrompt(ctx context.Context, in *GetPromptRequest, opts ...grpc.CallOption) (*GetPromptResult, error)
+	ListResources(ctx context.Context, in *ListResourcesRequest, opts ...grpc.CallOption) (*ListResourcesResult, error)
+	ListResourceTemplates(ctx context.Context, in *ListResourceTemplatesRequest, opts ...grpc.CallOption) (*ListResourceTemplatesResult, error)
 	Complete(ctx context.Context, in *CompleteRequest, opts ...grpc.CallOption) (*CompleteResult, error)
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResult, error)
 }
@@ -99,6 +103,26 @@ func (c *modelContextProtocolClient) GetPrompt(ctx context.Context, in *GetPromp
 	return out, nil
 }
 
+func (c *modelContextProtocolClient) ListResources(ctx context.Context, in *ListResourcesRequest, opts ...grpc.CallOption) (*ListResourcesResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListResourcesResult)
+	err := c.cc.Invoke(ctx, ModelContextProtocol_ListResources_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *modelContextProtocolClient) ListResourceTemplates(ctx context.Context, in *ListResourceTemplatesRequest, opts ...grpc.CallOption) (*ListResourceTemplatesResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListResourceTemplatesResult)
+	err := c.cc.Invoke(ctx, ModelContextProtocol_ListResourceTemplates_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *modelContextProtocolClient) Complete(ctx context.Context, in *CompleteRequest, opts ...grpc.CallOption) (*CompleteResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CompleteResult)
@@ -128,6 +152,8 @@ type ModelContextProtocolServer interface {
 	ListTools(context.Context, *ListToolsRequest) (*ListToolsResult, error)
 	ListPrompts(context.Context, *ListPromptsRequest) (*ListPromptsResult, error)
 	GetPrompt(context.Context, *GetPromptRequest) (*GetPromptResult, error)
+	ListResources(context.Context, *ListResourcesRequest) (*ListResourcesResult, error)
+	ListResourceTemplates(context.Context, *ListResourceTemplatesRequest) (*ListResourceTemplatesResult, error)
 	Complete(context.Context, *CompleteRequest) (*CompleteResult, error)
 	Ping(context.Context, *PingRequest) (*PingResult, error)
 }
@@ -153,6 +179,12 @@ func (UnimplementedModelContextProtocolServer) ListPrompts(context.Context, *Lis
 }
 func (UnimplementedModelContextProtocolServer) GetPrompt(context.Context, *GetPromptRequest) (*GetPromptResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPrompt not implemented")
+}
+func (UnimplementedModelContextProtocolServer) ListResources(context.Context, *ListResourcesRequest) (*ListResourcesResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListResources not implemented")
+}
+func (UnimplementedModelContextProtocolServer) ListResourceTemplates(context.Context, *ListResourceTemplatesRequest) (*ListResourceTemplatesResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListResourceTemplates not implemented")
 }
 func (UnimplementedModelContextProtocolServer) Complete(context.Context, *CompleteRequest) (*CompleteResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Complete not implemented")
@@ -270,6 +302,42 @@ func _ModelContextProtocol_GetPrompt_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ModelContextProtocol_ListResources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListResourcesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelContextProtocolServer).ListResources(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModelContextProtocol_ListResources_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelContextProtocolServer).ListResources(ctx, req.(*ListResourcesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModelContextProtocol_ListResourceTemplates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListResourceTemplatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelContextProtocolServer).ListResourceTemplates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModelContextProtocol_ListResourceTemplates_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelContextProtocolServer).ListResourceTemplates(ctx, req.(*ListResourceTemplatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ModelContextProtocol_Complete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CompleteRequest)
 	if err := dec(in); err != nil {
@@ -332,6 +400,14 @@ var ModelContextProtocol_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPrompt",
 			Handler:    _ModelContextProtocol_GetPrompt_Handler,
+		},
+		{
+			MethodName: "ListResources",
+			Handler:    _ModelContextProtocol_ListResources_Handler,
+		},
+		{
+			MethodName: "ListResourceTemplates",
+			Handler:    _ModelContextProtocol_ListResourceTemplates_Handler,
 		},
 		{
 			MethodName: "Complete",

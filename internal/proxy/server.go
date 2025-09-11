@@ -312,6 +312,20 @@ func (s *Server) GetPrompt(ctx context.Context, req *mcp.GetPromptRequest) (*mcp
 	return &result, err
 }
 
+// ListResources implements the ListResources RPC.
+func (s *Server) ListResources(ctx context.Context, req *mcp.ListResourcesRequest) (*mcp.ListResourcesResult, error) {
+	var result mcp.ListResourcesResult
+	err := s.doRpcCall(ctx, req, "resources/list", &result)
+	return &result, err
+}
+
+// ListResourceTemplates implements the ListResourceTemplates RPC.
+func (s *Server) ListResourceTemplates(ctx context.Context, req *mcp.ListResourceTemplatesRequest) (*mcp.ListResourceTemplatesResult, error) {
+	var result mcp.ListResourceTemplatesResult
+	err := s.doRpcCall(ctx, req, "resources/templates/list", &result)
+	return &result, err
+}
+
 // This is the heart of doing a session jsonrpc call and unpacking, then deserializing the result.
 func (s *Server) doRpcCall(ctx context.Context, req protoreflect.ProtoMessage,
 	jsonRpcMethod mcpconst.JsonRpcMethod, rpcResultPtr any) error {

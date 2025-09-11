@@ -22,6 +22,8 @@ const (
 	TOOL_LOWER          = "lower"
 	TOOL_GREET_RESOURCE = "greetResource"
 
+	RESOURCE_URI_STATIC = "test://static/resource"
+
 	PROMPT_GREET = "greet"
 )
 
@@ -83,6 +85,10 @@ var PromptsProvided = []ProvidedPrompt{
 	},
 }
 
+var ResourcesProvided = []mcp.Resource{
+	mcp.NewResource(RESOURCE_URI_STATIC, "Static Resource", mcp.WithMIMEType("text/plain")),
+}
+
 func RunExampleMcpServer(serverName string, uri string) http.Handler {
 	s := server.NewMCPServer(serverName,
 		"0.0.0",
@@ -98,6 +104,10 @@ func RunExampleMcpServer(serverName string, uri string) http.Handler {
 
 	for _, pp := range PromptsProvided {
 		s.AddPrompt(pp.prompt, pp.handler)
+	}
+
+	for _, rp := range ResourcesProvided {
+		s.AddResource(rp, handleReadResource)
 	}
 
 	// TODO consider having an optional param for uri that defaults to /mcp
@@ -173,6 +183,16 @@ func doGreetPrompt(ctx context.Context, request mcp.GetPromptRequest) (*mcp.GetP
 					Text: fmt.Sprintf("What's up, %s?", args["whom"]),
 				},
 			},
+		},
+	}, nil
+}
+
+func handleReadResource(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
+	return []mcp.ResourceContents{
+		mcp.TextResourceContents{
+			URI:      "test://static/resource",
+			MIMEType: "text/plain",
+			Text:     "This is a sample resource",
 		},
 	}, nil
 }

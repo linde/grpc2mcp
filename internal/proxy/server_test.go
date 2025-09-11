@@ -51,4 +51,7 @@ func TestBufconDirect(t *testing.T) {
 	err = doGrpcProxyPromptTests(context.Background(), mcpGrpcClient)
 	require.NoError(t, err)
 
+	err = doGrpcProxyResourceTests(context.Background(), mcpGrpcClient)
+	require.NoError(t, err)
+
 }

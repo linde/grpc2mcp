@@ -16,6 +16,8 @@ service ModelContextProtocol {
     rpc ListTools(ListToolsRequest) returns (ListToolsResult);
     rpc ListPrompts(ListPromptsRequest) returns (ListPromptsResult);
     rpc GetPrompt(GetPromptRequest) returns (GetPromptResult);
+    rpc ListResources(ListResourcesRequest) returns (ListResourcesResult);
+    rpc ListResourceTemplates(ListResourceTemplatesRequest) returns (ListResourceTemplatesResult);
     rpc Complete(CompleteRequest) returns (CompleteResult);
     rpc Ping(PingRequest) returns (PingResult);
 }
@@ -23,6 +25,28 @@ service ModelContextProtocol {
 // ----------------------------------------------------------------
 // Top-level RPC Messages
 // ----------------------------------------------------------------
+
+message ListResourcesRequest {
+    optional string cursor = 1;
+    optional google.protobuf.Struct _meta = 2;
+}
+
+message ListResourcesResult {
+    repeated Resource resources = 1;
+    optional string nextCursor = 2;
+    optional google.protobuf.Struct _meta = 3;
+}
+
+message ListResourceTemplatesRequest {
+    optional string cursor = 1;
+    optional google.protobuf.Struct _meta = 2;
+}
+
+message ListResourceTemplatesResult {
+    repeated ResourceTemplate resourceTemplates = 1;
+    optional string nextCursor = 2;
+    optional google.protobuf.Struct _meta = 3;
+}
 
 message InitializeRequest {
     string protocolVersion = 1;
@@ -230,6 +254,16 @@ message Resource {
     optional Annotations annotations = 6;
     optional int64 size = 7;
     optional google.protobuf.Struct _meta = 8;
+}
+
+message ResourceTemplate {
+    string name = 1;
+    optional string title = 2;
+    string uriTemplate = 3;
+    optional string description = 4;
+    optional string mimeType = 5;
+    optional Annotations annotations = 6;
+    optional google.protobuf.Struct _meta = 7;
 }
 
 message TextResourceContents {

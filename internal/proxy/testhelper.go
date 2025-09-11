@@ -166,6 +166,37 @@ func doGrpcProxyToolTests(ctx context.Context, mcpGrpcClient pb.ModelContextProt
 	return nil
 }
 
+// TODO these should be done in the e2e as well, not just bufcon
+func doGrpcProxyResourceTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) error {
+
+	sessionCtx, err := doMcpInitialize(ctx, mcpGrpcClient)
+	if err != nil {
+		return err
+	}
+
+	listResourcesResult, err := mcpGrpcClient.ListResources(sessionCtx, &pb.ListResourcesRequest{})
+	if err != nil {
+		return err
+	}
+
+	var resourceNamesExpected []string
+	for _, resourceProvided := range examplemcp.ResourcesProvided {
+		resourceNamesExpected = append(resourceNamesExpected, resourceProvided.GetName())
+	}
+
+	var resourceNamesProvided []string
+	for _, r := range listResourcesResult.GetResources() {
+		resourceNamesProvided = append(resourceNamesProvided, r.Name)
+	}
+
+	if !reflect.DeepEqual(resourceNamesExpected, resourceNamesProvided) {
+		return fmt.Errorf("resources expected %v not equal resources found %v", resourceNamesExpected, resourceNamesProvided)
+	}
+
+	return nil
+}
+
+// TODO these should be done in the e2e as well, not just bufcon
 func doGrpcProxyPromptTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) error {
 
 	sessionCtx, err := doMcpInitialize(ctx, mcpGrpcClient)
