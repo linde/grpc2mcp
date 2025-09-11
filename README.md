@@ -6,7 +6,10 @@ The proxy handles the gRPC service defined in `proto/mcp.proto` and forwards the
 
 ## Running the Example MCP Server
 
-An example MCP server is provided in this repository built using [fastmcp](https://gofastmcp.com/). To run it, you first need to activate the Python virtual environment and then run the server script.
+There are two example MCP servers to help explore functionality.
+
+### Python trivial server
+There is a trivial python based server built using [fastmcp](https://gofastmcp.com/). To run it, you first need to activate the Python virtual environment and then run the server script.
 
 ```bash
 # Activate the virtual environment
@@ -18,6 +21,17 @@ python example-mcp/trivy/trivy-server.py
 
 The example MCP server will run on `localhost:8888` by default. You can specify 
 other ports via `--port`.
+
+### Golang based MCP server
+
+There is also a more full featured MCP server implement using [mark3labs mcp-go](https://github.com/mark3labs/mcp-go). This is used for end to end tests and may be run via the subcommand `example-mcp`. For example, 
+
+
+```
+go run main.go example-mcp
+```
+You can modify the port and uri that is served.
+
 
 ## Running the Proxy
 
@@ -54,11 +68,14 @@ arguments after first initiailizing an MCP session:
 
 ```bash
 
-# first initialize to see the whole response -- this covers Initialize and Initialized
+# first initialize to see the whole response. covers Initialize and Initialized
  grpcurl -v -plaintext   localhost:8080  mcp.ModelContextProtocol/Initialize
 
 # try it again with grep to capture the value of the "mcp-session-id" header line
-MCP_SESSION_HEADER=$(grpcurl -v -plaintext   localhost:8080  mcp.ModelContextProtocol/Initialize | grep mcp-session-id)
+MCP_SESSION_HEADER=$(
+ grpcurl -v -plaintext localhost:8080 \
+    mcp.ModelContextProtocol/Initialize | grep mcp-session-id
+)
 
 
 # now use that header with the session id to make any other calls
@@ -79,7 +96,8 @@ grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
     localhost:8080 mcp.ModelContextProtocol/CallMethod
 
 # also we can call to list the tools
-grpcurl -H "${MCP_SESSION_HEADER}" -plaintext localhost:8080 mcp.ModelContextProtocol/ListTools
+grpcurl -H "${MCP_SESSION_HEADER}" -plaintext localhost:8080 \
+    mcp.ModelContextProtocol/ListTools
 
 # and we can call for completions -- NB this isnt implemented by our fastmcp
 # server so is really an error handling test too.
@@ -101,29 +119,28 @@ grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
 EOF
 
 # simple ping
-grpcurl -v -H "${MCP_SESSION_HEADER}" -plaintext localhost:8080 mcp.ModelContextProtocol/Ping
+grpcurl -v -H "${MCP_SESSION_HEADER}" -plaintext localhost:8080 \
+    mcp.ModelContextProtocol/Ping
 
 # and prompts
-grpcurl -H "${MCP_SESSION_HEADER}" -plaintext  localhost:8080    mcp.ModelContextProtocol/ListPrompts
+grpcurl -H "${MCP_SESSION_HEADER}" -plaintext  localhost:8080 \
+    mcp.ModelContextProtocol/ListPrompts
 grpcurl -H "${MCP_SESSION_HEADER}" -plaintext -d '{"name": "greet"}' \
     localhost:8080    mcp.ModelContextProtocol/GetPrompt
-
 
 ```
 
 ### Example with github's MCP server
 
-```
-
-
 ```bash
-
 export GITHUB_PAT=[your token]
-grpcurl -v -plaintext -H "Authorization: Bearer ${GITHUB_PAT}" localhost:8080  mcp.ModelContextProtocol/Initialize
+grpcurl -v -plaintext -H "Authorization: Bearer ${GITHUB_PAT}" \ 
+    localhost:8080  mcp.ModelContextProtocol/Initialize
 
-MCP_SESSION_HEADER=$(grpcurl -v -plaintext -H "Authorization: Bearer ${GITHUB_PAT}" localhost:8080  mcp.ModelContextProtocol/Initialize | grep mcp-session-id)
+MCP_SESSION_HEADER=$(grpcurl -v -plaintext -H "Authorization: Bearer ${GITHUB_PAT}" \
+    localhost:8080  mcp.ModelContextProtocol/Initialize | grep mcp-session-id)
 
-grpcurl -H "${MCP_SESSION_HEADER}" -H "Authorization: Bearer ${GITHUB_PAT}" -plaintext localhost:8080 mcp.ModelContextProtocol/ListTools
-
-
+grpcurl -H "${MCP_SESSION_HEADER}" -H "Authorization: Bearer ${GITHUB_PAT}" \
+    -plaintext localhost:8080 mcp.ModelContextProtocol/ListTools
 ```
+
