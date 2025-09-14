@@ -4,6 +4,14 @@ This project implements a proxy server that translates gRPC requests into JSON-R
 
 The proxy handles the gRPC service defined in `proto/mcp.proto` and forwards the requests to a configured MCP endpoint. The protos there were derived from the current MCP specification, ie the [2025-06-18/schema.ts](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/schema/2025-06-18/schema.ts).
 
+## Building the project
+
+You just need to run `go generate ./...` then `go run main.go ...` will work as described below. for example:
+
+```
+go run main.go proxy
+```
+
 ## Running the Example MCP Server
 
 There are two example MCP servers to help explore functionality.
@@ -98,6 +106,25 @@ grpcurl -H "${MCP_SESSION_HEADER}" -plaintext \
 # also we can call to list the tools
 grpcurl -H "${MCP_SESSION_HEADER}" -plaintext localhost:8080 \
     mcp.ModelContextProtocol/ListTools
+
+
+
+#### Streaming
+
+Streaming is also supported from grpc, although it sends individual single calls to the grpc 
+server at this moment. To see this in action, try:
+
+```
+grpcurl -H "${MCP_SESSION_HEADER}" -plaintext -d @ localhost:8080 mcp.ModelContextProtocol/CallMethodStream <<EOF
+{"name": "add", "arguments": {"a": 10, "b": 1}}
+{"name": "add", "arguments": {"a": 20, "b": 1}}
+{"name": "add", "arguments": {"a": 30, "b": 1}}
+EOF
+```
+
+#### Other methods
+
+```
 
 # and we can call for completions -- NB this isnt implemented by our fastmcp
 # server so is really an error handling test too.

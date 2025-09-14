@@ -13,6 +13,7 @@ option go_package = "grpc2mcp/pb";
 service ModelContextProtocol {
     rpc Initialize(InitializeRequest) returns (InitializeResult);
     rpc CallMethod(CallToolRequest) returns (CallToolResult);
+    rpc CallMethodStream(stream CallToolRequest) returns (stream CallToolResult);
     rpc ListTools(ListToolsRequest) returns (ListToolsResult);
     rpc ListPrompts(ListPromptsRequest) returns (ListPromptsResult);
     rpc GetPrompt(GetPromptRequest) returns (GetPromptResult);

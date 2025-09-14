@@ -3321,12 +3321,13 @@ const file_mcp_proto_rawDesc = "" +
 	"\x04Role\x12\x14\n" +
 	"\x10ROLE_UNSPECIFIED\x10\x00\x12\b\n" +
 	"\x04USER\x10\x01\x12\r\n" +
-	"\tASSISTANT\x10\x022\xc6\x04\n" +
+	"\tASSISTANT\x10\x022\x89\x05\n" +
 	"\x14ModelContextProtocol\x12;\n" +
 	"\n" +
 	"Initialize\x12\x16.mcp.InitializeRequest\x1a\x15.mcp.InitializeResult\x127\n" +
 	"\n" +
-	"CallMethod\x12\x14.mcp.CallToolRequest\x1a\x13.mcp.CallToolResult\x128\n" +
+	"CallMethod\x12\x14.mcp.CallToolRequest\x1a\x13.mcp.CallToolResult\x12A\n" +
+	"\x10CallMethodStream\x12\x14.mcp.CallToolRequest\x1a\x13.mcp.CallToolResult(\x010\x01\x128\n" +
 	"\tListTools\x12\x15.mcp.ListToolsRequest\x1a\x14.mcp.ListToolsResult\x12>\n" +
 	"\vListPrompts\x12\x17.mcp.ListPromptsRequest\x1a\x16.mcp.ListPromptsResult\x128\n" +
 	"\tGetPrompt\x12\x15.mcp.GetPromptRequest\x1a\x14.mcp.GetPromptResult\x12D\n" +
@@ -3486,24 +3487,26 @@ var file_mcp_proto_depIdxs = []int32{
 	29, // 75: mcp.JSONSchema.PropertiesEntry.value:type_name -> mcp.JSONSchema
 	5,  // 76: mcp.ModelContextProtocol.Initialize:input_type -> mcp.InitializeRequest
 	9,  // 77: mcp.ModelContextProtocol.CallMethod:input_type -> mcp.CallToolRequest
-	7,  // 78: mcp.ModelContextProtocol.ListTools:input_type -> mcp.ListToolsRequest
-	15, // 79: mcp.ModelContextProtocol.ListPrompts:input_type -> mcp.ListPromptsRequest
-	17, // 80: mcp.ModelContextProtocol.GetPrompt:input_type -> mcp.GetPromptRequest
-	1,  // 81: mcp.ModelContextProtocol.ListResources:input_type -> mcp.ListResourcesRequest
-	3,  // 82: mcp.ModelContextProtocol.ListResourceTemplates:input_type -> mcp.ListResourceTemplatesRequest
-	11, // 83: mcp.ModelContextProtocol.Complete:input_type -> mcp.CompleteRequest
-	13, // 84: mcp.ModelContextProtocol.Ping:input_type -> mcp.PingRequest
-	6,  // 85: mcp.ModelContextProtocol.Initialize:output_type -> mcp.InitializeResult
-	10, // 86: mcp.ModelContextProtocol.CallMethod:output_type -> mcp.CallToolResult
-	8,  // 87: mcp.ModelContextProtocol.ListTools:output_type -> mcp.ListToolsResult
-	16, // 88: mcp.ModelContextProtocol.ListPrompts:output_type -> mcp.ListPromptsResult
-	18, // 89: mcp.ModelContextProtocol.GetPrompt:output_type -> mcp.GetPromptResult
-	2,  // 90: mcp.ModelContextProtocol.ListResources:output_type -> mcp.ListResourcesResult
-	4,  // 91: mcp.ModelContextProtocol.ListResourceTemplates:output_type -> mcp.ListResourceTemplatesResult
-	12, // 92: mcp.ModelContextProtocol.Complete:output_type -> mcp.CompleteResult
-	14, // 93: mcp.ModelContextProtocol.Ping:output_type -> mcp.PingResult
-	85, // [85:94] is the sub-list for method output_type
-	76, // [76:85] is the sub-list for method input_type
+	9,  // 78: mcp.ModelContextProtocol.CallMethodStream:input_type -> mcp.CallToolRequest
+	7,  // 79: mcp.ModelContextProtocol.ListTools:input_type -> mcp.ListToolsRequest
+	15, // 80: mcp.ModelContextProtocol.ListPrompts:input_type -> mcp.ListPromptsRequest
+	17, // 81: mcp.ModelContextProtocol.GetPrompt:input_type -> mcp.GetPromptRequest
+	1,  // 82: mcp.ModelContextProtocol.ListResources:input_type -> mcp.ListResourcesRequest
+	3,  // 83: mcp.ModelContextProtocol.ListResourceTemplates:input_type -> mcp.ListResourceTemplatesRequest
+	11, // 84: mcp.ModelContextProtocol.Complete:input_type -> mcp.CompleteRequest
+	13, // 85: mcp.ModelContextProtocol.Ping:input_type -> mcp.PingRequest
+	6,  // 86: mcp.ModelContextProtocol.Initialize:output_type -> mcp.InitializeResult
+	10, // 87: mcp.ModelContextProtocol.CallMethod:output_type -> mcp.CallToolResult
+	10, // 88: mcp.ModelContextProtocol.CallMethodStream:output_type -> mcp.CallToolResult
+	8,  // 89: mcp.ModelContextProtocol.ListTools:output_type -> mcp.ListToolsResult
+	16, // 90: mcp.ModelContextProtocol.ListPrompts:output_type -> mcp.ListPromptsResult
+	18, // 91: mcp.ModelContextProtocol.GetPrompt:output_type -> mcp.GetPromptResult
+	2,  // 92: mcp.ModelContextProtocol.ListResources:output_type -> mcp.ListResourcesResult
+	4,  // 93: mcp.ModelContextProtocol.ListResourceTemplates:output_type -> mcp.ListResourceTemplatesResult
+	12, // 94: mcp.ModelContextProtocol.Complete:output_type -> mcp.CompleteResult
+	14, // 95: mcp.ModelContextProtocol.Ping:output_type -> mcp.PingResult
+	86, // [86:96] is the sub-list for method output_type
+	76, // [76:86] is the sub-list for method input_type
 	76, // [76:76] is the sub-list for extension type_name
 	76, // [76:76] is the sub-list for extension extendee
 	0,  // [0:76] is the sub-list for field type_name

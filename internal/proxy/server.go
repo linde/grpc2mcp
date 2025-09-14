@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -201,6 +202,41 @@ func (s *Server) Initialize(ctx context.Context, req *mcp.InitializeRequest) (*m
 // CallMethod implements the CallMethod RPC.
 func (s *Server) CallMethod(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	return s.doCallMethodRpc(ctx, req)
+}
+
+func (s *Server) CallMethodStream(stream mcp.ModelContextProtocol_CallMethodStreamServer) error {
+	ctx := stream.Context()
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return status.Errorf(codes.InvalidArgument, "missing metadata")
+	}
+
+	sessionID := md.Get(mcpconst.MCP_SESSION_ID_HEADER)
+	if len(sessionID) == 0 {
+		return status.Errorf(codes.Unauthenticated, "missing header: %s", mcpconst.MCP_SESSION_ID_HEADER)
+	}
+	ctx = context.WithValue(ctx, mcpconst.MCP_SESSION_ID_HEADER, sessionID[0])
+
+	for {
+		req, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+
+		resp, err := s.doCallMethodRpc(ctx, req)
+		if err != nil {
+			// TODO: Should we send an error response on the stream?
+			// For now, we just return the error, which will close the stream.
+			return err
+		}
+
+		if err := stream.Send(resp); err != nil {
+			return err
+		}
+	}
 }
 
 // doCallMethodRpc handles the specific logic for unmarshaling the polymorphic

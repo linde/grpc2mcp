@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	ModelContextProtocol_Initialize_FullMethodName            = "/mcp.ModelContextProtocol/Initialize"
 	ModelContextProtocol_CallMethod_FullMethodName            = "/mcp.ModelContextProtocol/CallMethod"
+	ModelContextProtocol_CallMethodStream_FullMethodName      = "/mcp.ModelContextProtocol/CallMethodStream"
 	ModelContextProtocol_ListTools_FullMethodName             = "/mcp.ModelContextProtocol/ListTools"
 	ModelContextProtocol_ListPrompts_FullMethodName           = "/mcp.ModelContextProtocol/ListPrompts"
 	ModelContextProtocol_GetPrompt_FullMethodName             = "/mcp.ModelContextProtocol/GetPrompt"
@@ -36,6 +37,7 @@ const (
 type ModelContextProtocolClient interface {
 	Initialize(ctx context.Context, in *InitializeRequest, opts ...grpc.CallOption) (*InitializeResult, error)
 	CallMethod(ctx context.Context, in *CallToolRequest, opts ...grpc.CallOption) (*CallToolResult, error)
+	CallMethodStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[CallToolRequest, CallToolResult], error)
 	ListTools(ctx context.Context, in *ListToolsRequest, opts ...grpc.CallOption) (*ListToolsResult, error)
 	ListPrompts(ctx context.Context, in *ListPromptsRequest, opts ...grpc.CallOption) (*ListPromptsResult, error)
 	GetPrompt(ctx context.Context, in *GetPromptRequest, opts ...grpc.CallOption) (*GetPromptResult, error)
@@ -72,6 +74,19 @@ func (c *modelContextProtocolClient) CallMethod(ctx context.Context, in *CallToo
 	}
 	return out, nil
 }
+
+func (c *modelContextProtocolClient) CallMethodStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[CallToolRequest, CallToolResult], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &ModelContextProtocol_ServiceDesc.Streams[0], ModelContextProtocol_CallMethodStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[CallToolRequest, CallToolResult]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ModelContextProtocol_CallMethodStreamClient = grpc.BidiStreamingClient[CallToolRequest, CallToolResult]
 
 func (c *modelContextProtocolClient) ListTools(ctx context.Context, in *ListToolsRequest, opts ...grpc.CallOption) (*ListToolsResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -149,6 +164,7 @@ func (c *modelContextProtocolClient) Ping(ctx context.Context, in *PingRequest, 
 type ModelContextProtocolServer interface {
 	Initialize(context.Context, *InitializeRequest) (*InitializeResult, error)
 	CallMethod(context.Context, *CallToolRequest) (*CallToolResult, error)
+	CallMethodStream(grpc.BidiStreamingServer[CallToolRequest, CallToolResult]) error
 	ListTools(context.Context, *ListToolsRequest) (*ListToolsResult, error)
 	ListPrompts(context.Context, *ListPromptsRequest) (*ListPromptsResult, error)
 	GetPrompt(context.Context, *GetPromptRequest) (*GetPromptResult, error)
@@ -170,6 +186,9 @@ func (UnimplementedModelContextProtocolServer) Initialize(context.Context, *Init
 }
 func (UnimplementedModelContextProtocolServer) CallMethod(context.Context, *CallToolRequest) (*CallToolResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CallMethod not implemented")
+}
+func (UnimplementedModelContextProtocolServer) CallMethodStream(grpc.BidiStreamingServer[CallToolRequest, CallToolResult]) error {
+	return status.Errorf(codes.Unimplemented, "method CallMethodStream not implemented")
 }
 func (UnimplementedModelContextProtocolServer) ListTools(context.Context, *ListToolsRequest) (*ListToolsResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTools not implemented")
@@ -247,6 +266,13 @@ func _ModelContextProtocol_CallMethod_Handler(srv interface{}, ctx context.Conte
 	}
 	return interceptor(ctx, in, info, handler)
 }
+
+func _ModelContextProtocol_CallMethodStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ModelContextProtocolServer).CallMethodStream(&grpc.GenericServerStream[CallToolRequest, CallToolResult]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ModelContextProtocol_CallMethodStreamServer = grpc.BidiStreamingServer[CallToolRequest, CallToolResult]
 
 func _ModelContextProtocol_ListTools_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListToolsRequest)
@@ -418,6 +444,13 @@ var ModelContextProtocol_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ModelContextProtocol_Ping_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "CallMethodStream",
+			Handler:       _ModelContextProtocol_CallMethodStream_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "mcp.proto",
 }
