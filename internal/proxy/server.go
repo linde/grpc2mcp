@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -46,7 +45,8 @@ func (s *Server) StartAsync(port int) (*net.TCPAddr, context.CancelFunc, error) 
 	}
 
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(sessionInterceptor),
+		grpc.UnaryInterceptor(unarySessionInterceptor),
+		grpc.StreamInterceptor(streamSessionInterceptor),
 	)
 	mcp.RegisterModelContextProtocolServer(grpcServer, s)
 	reflection.Register(grpcServer)
@@ -65,7 +65,8 @@ func (s *Server) StartAsync(port int) (*net.TCPAddr, context.CancelFunc, error) 
 func (s *Server) StartProxyToListenerAsync(lis net.Listener) (func(), error) {
 
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(sessionInterceptor),
+		grpc.UnaryInterceptor(unarySessionInterceptor),
+		grpc.StreamInterceptor(streamSessionInterceptor),
 	)
 	mcp.RegisterModelContextProtocolServer(grpcServer, s)
 	reflection.Register(grpcServer)
@@ -79,56 +80,100 @@ func (s *Server) StartProxyToListenerAsync(lis net.Listener) (func(), error) {
 	return grpcServer.GracefulStop, nil
 }
 
-// sessionInterceptor is a gRPC unary interceptor that checks for the MCP_SESSION_ID_HEADER header.
-func sessionInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-
-	// first, check for Authorization header because they're intended for
-	// the downstream MCP server (ie as opposed to our service which would get a
-	// dedicated interceptor. So, we want to make them available in the ctx
+// TODO figure out why and explain the reason for recopying these context vars
+func getInterceptorContext(ctx context.Context, method string) (context.Context, error) {
 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return nil, status.Errorf(codes.InvalidArgument, "missing metadata")
+		md = metadata.MD{} // Initialize if no metadata exists
 	}
 
+	// first migrate the authorization header, if present
 	authorizationHeader := md.Get(mcpconst.AuthorizationHeader)
 	if len(authorizationHeader) > 0 {
 		// what TODO if there are more than one?
 		// looks like we have at least one header, use the first.
-
-		ctx = context.WithValue(ctx, mcpconst.AuthorizationHeader, authorizationHeader[0]) //nolint:go-staticcheck // SA1029 ignore this!
+		md.Set(mcpconst.AuthorizationHeader, authorizationHeader[0])
 	}
 
-	// Next step is to check/process the session id which follows for all but
-	// the Initialize method. Skip it bc that's where the session comes from
-	if strings.HasSuffix(info.FullMethod, "Initialize") {
-		return handler(ctx, req)
+	// Next step is to check/process the session id, if we're not in an initialize
+	if !strings.HasSuffix(method, "Initialize") {
+		sessionID := md.Get(mcpconst.MCP_SESSION_ID_HEADER)
+
+		// if we dont get a session id with our key, try the lower case version which also works with MCP servers
+		if len(sessionID) == 0 {
+			sessionID = md.Get(strings.ToLower(mcpconst.MCP_SESSION_ID_HEADER))
+		}
+
+		// if still empty, report an error
+		if len(sessionID) == 0 {
+			return nil, status.Errorf(codes.Unauthenticated, "missing header: %s", mcpconst.MCP_SESSION_ID_HEADER)
+		}
+
+		md.Set(mcpconst.MCP_SESSION_ID_HEADER, sessionID[0])
 	}
 
-	sessionID := md.Get(mcpconst.MCP_SESSION_ID_HEADER)
-	if len(sessionID) == 0 {
-		return nil, status.Errorf(codes.Unauthenticated, "missing header: %s", mcpconst.MCP_SESSION_ID_HEADER)
-	}
+	// now let's create a new context with the md we've assembled
+	newCtx := metadata.NewIncomingContext(ctx, md)
 
-	// The session ID is valid, so we can proceed with the request.
-	// Before we do, let's add the session ID to the context so that the
-	// RPC handlers can access it.
-	ctx = context.WithValue(ctx, mcpconst.MCP_SESSION_ID_HEADER, sessionID[0])
-
-	return handler(ctx, req)
+	return newCtx, nil
 }
 
-func initHeadersFromContext(ctx context.Context) map[string]string {
+// sessionInterceptor is a gRPC unary interceptor that checks for the MCP_SESSION_ID_HEADER header.
+func unarySessionInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 
+	returnCtx, err := getInterceptorContext(ctx, info.FullMethod)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return handler(returnCtx, req)
+}
+
+func streamSessionInterceptor(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+
+	newCtx, err := getInterceptorContext(ss.Context(), info.FullMethod)
+
+	if err != nil {
+		return err
+	}
+	type serverStream struct {
+		grpc.ServerStream
+		ctx context.Context
+	}
+	return handler(srv, &serverStream{ss, newCtx})
+
+}
+
+// initHeadersFromContext extracts metadata from the context and returns it as a map of HTTP headers.
+// It first tries to extract gRPC metadata, and then falls back to checking for context values for specific headers.
+func initHeadersFromContext(ctx context.Context) map[string]string {
 	headersFromContext := map[string]string{}
 
-	CANDIDATE_HEADERS := []string{mcpconst.MCP_SESSION_ID_HEADER, mcpconst.AuthorizationHeader}
+	// Prefer gRPC metadata if present
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		for k, v := range md {
+			if len(v) > 0 {
+				// gRPC pseudo-headers and content-type are not valid for forwarding.
+				if strings.HasPrefix(k, ":") || strings.ToLower(k) == "content-type" {
+					continue
+				}
+				headersFromContext[http.CanonicalHeaderKey(k)] = v[0]
+			}
+		}
+	}
 
+	// Fallback for specific headers that might be in context values (e.g. during Initialize)
+	CANDIDATE_HEADERS := []string{mcpconst.MCP_SESSION_ID_HEADER, mcpconst.AuthorizationHeader}
 	for _, candidateHeader := range CANDIDATE_HEADERS {
-		headerVal := ctx.Value(candidateHeader)
-		if headerValStr, ok := headerVal.(string); ok && headerValStr != "" {
-			// log.Printf("passing through header: %s:%s", candidateHeader, headerValStr)
-			headersFromContext[candidateHeader] = headerValStr
+		// Only check context value if not already found in metadata
+		if _, exists := headersFromContext[http.CanonicalHeaderKey(candidateHeader)]; !exists {
+			if headerVal := ctx.Value(candidateHeader); headerVal != nil {
+				if headerValStr, ok := headerVal.(string); ok && headerValStr != "" {
+					headersFromContext[http.CanonicalHeaderKey(candidateHeader)] = headerValStr
+				}
+			}
 		}
 	}
 
@@ -150,7 +195,7 @@ func (s *Server) doInitializeJsonRpc(ctx context.Context, req *mcp.InitializeReq
 		return "", err // DoRequest already wraps the error.
 	}
 
-	mcpSessionId, ok := httpResp.Header[mcpconst.MCP_SESSION_ID_HEADER]
+	mcpSessionId, ok := httpResp.Header[http.CanonicalHeaderKey(mcpconst.MCP_SESSION_ID_HEADER)]
 	if !ok || len(mcpSessionId) < 1 {
 		return "", fmt.Errorf("did not find MCP Session ID header: %s", mcpconst.MCP_SESSION_ID_HEADER)
 	}
@@ -172,7 +217,7 @@ func (s *Server) doInitializedJsonRpc(ctx context.Context) error {
 	return err
 }
 
-// Initialize implements the Initialize RPC.
+// Initialize implements the Initialize and Initialized RPC.
 func (s *Server) Initialize(ctx context.Context, req *mcp.InitializeRequest) (*mcp.InitializeResult, error) {
 	log.Println("Initialize called...")
 
@@ -202,41 +247,6 @@ func (s *Server) Initialize(ctx context.Context, req *mcp.InitializeRequest) (*m
 // CallMethod implements the CallMethod RPC.
 func (s *Server) CallMethod(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	return s.doCallMethodRpc(ctx, req)
-}
-
-func (s *Server) CallMethodStream(stream mcp.ModelContextProtocol_CallMethodStreamServer) error {
-	ctx := stream.Context()
-	md, ok := metadata.FromIncomingContext(ctx)
-	if !ok {
-		return status.Errorf(codes.InvalidArgument, "missing metadata")
-	}
-
-	sessionID := md.Get(mcpconst.MCP_SESSION_ID_HEADER)
-	if len(sessionID) == 0 {
-		return status.Errorf(codes.Unauthenticated, "missing header: %s", mcpconst.MCP_SESSION_ID_HEADER)
-	}
-	ctx = context.WithValue(ctx, mcpconst.MCP_SESSION_ID_HEADER, sessionID[0])
-
-	for {
-		req, err := stream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				return nil
-			}
-			return err
-		}
-
-		resp, err := s.doCallMethodRpc(ctx, req)
-		if err != nil {
-			// TODO: Should we send an error response on the stream?
-			// For now, we just return the error, which will close the stream.
-			return err
-		}
-
-		if err := stream.Send(resp); err != nil {
-			return err
-		}
-	}
 }
 
 // doCallMethodRpc handles the specific logic for unmarshaling the polymorphic

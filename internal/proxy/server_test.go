@@ -33,7 +33,9 @@ func TestBufconDirect(t *testing.T) {
 	defer serverCancel()
 
 	bufDialer := func(context.Context, string) (net.Conn, error) { return lis.Dial() }
-	conn, err := grpc.NewClient("passthrough:///bufnet", grpc.WithContextDialer(bufDialer),
+	conn, err := grpc.NewClient(
+		"passthrough:///bufnet",
+		grpc.WithContextDialer(bufDialer),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	require.NoError(t, err)
@@ -54,4 +56,5 @@ func TestBufconDirect(t *testing.T) {
 	err = doGrpcProxyResourceTests(context.Background(), mcpGrpcClient)
 	require.NoError(t, err)
 
+	doGrpcProxyStreamTests(t, mcpGrpcClient)
 }

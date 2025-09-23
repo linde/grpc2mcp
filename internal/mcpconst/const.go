@@ -1,10 +1,8 @@
 package mcpconst
 
-import "net/http"
-
 // TODO make this a comparable type
-var MCP_SESSION_ID_HEADER = http.CanonicalHeaderKey("mcp-session-id")
-var AuthorizationHeader = http.CanonicalHeaderKey("authorization")
+var MCP_SESSION_ID_HEADER = "mcp-session-id"
+var AuthorizationHeader = "authorization"
 
 // Method is a typed string for JSON-RPC method names.
 type JsonRpcMethod string

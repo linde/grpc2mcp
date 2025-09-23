@@ -27,7 +27,7 @@ import (
 
 func doGrpcProxyTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) error {
 
-	sessionCtx, err := doMcpInitialize(ctx, mcpGrpcClient)
+	sessionCtx, err := doProxyInitialize(ctx, mcpGrpcClient)
 	if err != nil {
 		return fmt.Errorf("error with initiailization: %w", err)
 	}
@@ -60,7 +60,7 @@ func doGrpcProxyTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocol
 
 func doGrpcProxyToolTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) error {
 
-	sessionCtx, err := doMcpInitialize(ctx, mcpGrpcClient)
+	sessionCtx, err := doProxyInitialize(ctx, mcpGrpcClient)
 	if err != nil {
 		return fmt.Errorf("error making NewStruct: %v", err)
 	}
@@ -165,7 +165,7 @@ func doGrpcProxyToolTests(ctx context.Context, mcpGrpcClient pb.ModelContextProt
 // TODO these should be done in the e2e as well, not just bufcon
 func doGrpcProxyResourceTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) error {
 
-	sessionCtx, err := doMcpInitialize(ctx, mcpGrpcClient)
+	sessionCtx, err := doProxyInitialize(ctx, mcpGrpcClient)
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func doGrpcProxyResourceTests(ctx context.Context, mcpGrpcClient pb.ModelContext
 // TODO these should be done in the e2e as well, not just bufcon
 func doGrpcProxyPromptTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) error {
 
-	sessionCtx, err := doMcpInitialize(ctx, mcpGrpcClient)
+	sessionCtx, err := doProxyInitialize(ctx, mcpGrpcClient)
 	if err != nil {
 		return err
 	}
@@ -262,7 +262,7 @@ func SetupAsyncMcpAndProxy(mcpServerName string) (pb.ModelContextProtocolClient,
 
 }
 
-func doMcpInitialize(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) (context.Context, error) {
+func doProxyInitialize(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) (context.Context, error) {
 
 	var sessionHeader metadata.MD
 	_, err := mcpGrpcClient.Initialize(ctx, &pb.InitializeRequest{}, grpc.Header(&sessionHeader))
@@ -275,8 +275,8 @@ func doMcpInitialize(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolC
 		errStr := fmt.Sprintf("did not receive mcp session id: %s", mcpconst.MCP_SESSION_ID_HEADER)
 		return nil, errors.New(errStr)
 	}
-	clientCtx := metadata.NewOutgoingContext(context.Background(), sessionHeader)
 
+	clientCtx := metadata.AppendToOutgoingContext(ctx, mcpconst.MCP_SESSION_ID_HEADER, mcpSessionId[0])
 	return clientCtx, nil
 
 }
