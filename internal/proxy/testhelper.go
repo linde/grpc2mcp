@@ -4,16 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"testing"
 
 	"grpc2mcp/internal/examplemcp"
 	"grpc2mcp/internal/mcpconst"
 	"grpc2mcp/pb"
 	"log"
 	"net/http/httptest"
-	"reflect"
 	"sort"
-	"strings"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
@@ -23,19 +25,13 @@ import (
 // This file contains tests that we run e2e via network gRPC and also directly
 // in process via bufcon.
 
-// TODO just go ahead and pass a test T in here
+func doGrpcProxyTests(t *testing.T, mcpGrpcClient pb.ModelContextProtocolClient) {
 
-func doGrpcProxyTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) error {
-
-	sessionCtx, err := doProxyInitialize(ctx, mcpGrpcClient)
-	if err != nil {
-		return fmt.Errorf("error with initiailization: %w", err)
-	}
+	sessionCtx, err := doProxyInitialize(t.Context(), mcpGrpcClient)
+	require.NoError(t, err)
 
 	PingResult, err := mcpGrpcClient.Ping(sessionCtx, &pb.PingRequest{})
-	if err != nil {
-		return fmt.Errorf("error with Ping: %w", err)
-	}
+	require.NoErrorf(t, err, "error with Ping")
 	log.Printf("ping: %v", PingResult)
 
 	// this tests our ListTools rpc making sure that our target tools are present
@@ -43,137 +39,119 @@ func doGrpcProxyTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocol
 
 	toolsFound := []string{}
 	listToolsResult, err := mcpGrpcClient.ListTools(sessionCtx, &pb.ListToolsRequest{})
-	if err != nil {
-		return fmt.Errorf("error with ListTools: %w", err)
-	}
+	require.NoErrorf(t, err, "error with ListTools")
+
 	for _, tool := range listToolsResult.Tools {
 		toolsFound = append(toolsFound, tool.Name)
 	}
 	sort.Strings(toolsFound)
 
 	// TODO this shoud probably just be an assert.ElementsMatch()
-	if !reflect.DeepEqual(toolsExpected, toolsFound) {
-		return fmt.Errorf("tools expected %v not equal tools found %v", toolsExpected, toolsFound)
-	}
-	return nil
+
+	assert := assert.New(t)
+	assert.EqualValuesf(toolsExpected, toolsFound, "set of tools not what was expected")
 }
 
-func doGrpcProxyToolTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) error {
+type ToolTestData struct {
+	tool     string
+	args     map[string]any
+	expected string
+	isError  bool
+}
 
-	sessionCtx, err := doProxyInitialize(ctx, mcpGrpcClient)
+func (ttd ToolTestData) NewToolRequest() (*pb.CallToolRequest, error) {
+	argsStruct, err := structpb.NewStruct(ttd.args)
 	if err != nil {
-		return fmt.Errorf("error making NewStruct: %v", err)
+		return nil, fmt.Errorf("error making NewStruct: %v", err)
 	}
 
-	failedAssertions := []string{}
+	callToolRequest := &pb.CallToolRequest{
+		Name:      ttd.tool,
+		Arguments: argsStruct.GetFields(),
+	}
 
-	for _, tc := range []struct {
-		tool     string
-		args     map[string]any
-		expected string
-		isError  bool
-	}{
-		{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 1, examplemcp.PARAM_B: 10}, "11", false},
-		{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 0, examplemcp.PARAM_B: 10}, "10", false},
-		{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 10, examplemcp.PARAM_B: 0}, "10", false},
-		{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: -10, examplemcp.PARAM_B: 5}, "-5", false},
-		{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 5, examplemcp.PARAM_B: -10}, "-5", false},
+	return callToolRequest, nil
+}
 
-		{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 1}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_B), true},
-		{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_B: 1}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_A), true},
+// used in streaming tests too
+var toolTestData = []ToolTestData{
+	{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 1, examplemcp.PARAM_B: 10}, "11", false},
+	{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 0, examplemcp.PARAM_B: 10}, "10", false},
+	{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 10, examplemcp.PARAM_B: 0}, "10", false},
+	{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: -10, examplemcp.PARAM_B: 5}, "-5", false},
+	{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 5, examplemcp.PARAM_B: -10}, "-5", false},
 
-		{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 1, examplemcp.PARAM_B: 10}, "10", false},
-		{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 0, examplemcp.PARAM_B: 10}, "0", false},
-		{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 10, examplemcp.PARAM_B: 0}, "0", false},
-		{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: -10, examplemcp.PARAM_B: 5}, "-50", false},
-		{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 5, examplemcp.PARAM_B: -10}, "-50", false},
+	{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_A: 1}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_B), true},
+	{examplemcp.TOOL_ADD, map[string]any{examplemcp.PARAM_B: 1}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_A), true},
 
-		{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 1}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_B), true},
-		{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_B: 1}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_A), true},
+	{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 1, examplemcp.PARAM_B: 10}, "10", false},
+	{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 0, examplemcp.PARAM_B: 10}, "0", false},
+	{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 10, examplemcp.PARAM_B: 0}, "0", false},
+	{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: -10, examplemcp.PARAM_B: 5}, "-50", false},
+	{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 5, examplemcp.PARAM_B: -10}, "-50", false},
 
-		{examplemcp.TOOL_LOWER, map[string]any{examplemcp.PARAM_S: "MixedCase"}, "mixedcase", false},
-		{examplemcp.TOOL_LOWER, map[string]any{examplemcp.PARAM_S: ""}, "", false},
+	{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_A: 1}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_B), true},
+	{examplemcp.TOOL_MULT, map[string]any{examplemcp.PARAM_B: 1}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_A), true},
 
-		{examplemcp.TOOL_LOWER, map[string]any{}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_S), true},
+	{examplemcp.TOOL_LOWER, map[string]any{examplemcp.PARAM_S: "MixedCase"}, "mixedcase", false},
+	{examplemcp.TOOL_LOWER, map[string]any{examplemcp.PARAM_S: ""}, "", false},
 
-		{examplemcp.TOOL_GREET_RESOURCE, map[string]any{examplemcp.PARAM_WHOM: "yer mom"}, "data:Hello%2C+yer+mom%21", false},
-	} {
-		log.Printf("CallMethod: %s %v", tc.tool, tc.args)
+	{examplemcp.TOOL_LOWER, map[string]any{}, fmt.Sprintf(`required argument "%s" not found`, examplemcp.PARAM_S), true},
 
-		argsStruct, err := structpb.NewStruct(tc.args)
-		if err != nil {
-			return fmt.Errorf("error making NewStruct: %v", err)
-		}
+	{examplemcp.TOOL_GREET_RESOURCE, map[string]any{examplemcp.PARAM_WHOM: "yer mom"}, "data:Hello%2C+yer+mom%21", false},
+}
 
-		callToolRequest := &pb.CallToolRequest{
-			Name:      tc.tool,
-			Arguments: argsStruct.GetFields(),
-		}
+func doGrpcProxyToolTests(t *testing.T, mcpGrpcClient pb.ModelContextProtocolClient) {
+
+	assert := assert.New(t)
+
+	sessionCtx, err := doProxyInitialize(t.Context(), mcpGrpcClient)
+	assert.NoErrorf(err, "error with doProxyInitialize")
+
+	for idx, ttd := range toolTestData {
+		log.Printf("CallMethod (%d of %d): %s %v", idx, len(toolTestData), ttd.tool, ttd.args)
+
+		callToolRequest, err := ttd.NewToolRequest()
+		assert.NoErrorf(err, "error with NewToolRequest")
+
 		callMethodResult, err := mcpGrpcClient.CallMethod(sessionCtx, callToolRequest)
-		if err != nil {
-			return fmt.Errorf("error with CallMethod(): %v", err)
-		}
-		if callMethodResult == nil {
-			return fmt.Errorf("nil method result from CallMethod()")
-		}
+		assert.NoErrorf(err, "error with CallMethod")
+		assert.NotNilf(callMethodResult, "callMethodResult was not nil")
 
-		if callMethodResult.GetIsError() != tc.isError {
-			failStr := fmt.Sprintf("%s %v, expected isError %v, observed %v", tc.tool, tc.args, tc.isError, callMethodResult.GetIsError())
-			failedAssertions = append(failedAssertions, failStr)
+		assert.Equal(ttd.isError, callMethodResult.GetIsError(), "unexpected callMethodResult error status")
+		if callMethodResult.GetIsError() {
 			continue // Continue to the next test case
 		}
 
 		contentItems := callMethodResult.GetContent()
 
-		if len(contentItems) != 1 {
-			// Only fail if we are not expecting an error. Error responses might not have content.
-			if !tc.isError {
-				return fmt.Errorf("expected 1 content item, got %d", len(contentItems))
-			}
-			// If we expect an error and there's no content, that's fine.
-			if len(contentItems) == 0 {
-				continue
-			}
-		}
-
 		// TODO add other tests for other content types: ImageContent, AudioContent or a ResourceLink
 		switch c := contentItems[0].ContentType.(type) {
 		case *pb.ContentBlock_Text:
 			actualResult := c.Text.Text
-			if actualResult != tc.expected {
-				failStr := fmt.Sprintf("%s %v, exepected %v, observed %v", tc.tool, tc.args, tc.expected, actualResult)
-				failedAssertions = append(failedAssertions, failStr)
-			}
+			assert.Equalf(ttd.expected, actualResult, "unexpected result with %s %v", ttd.tool, ttd.args)
+
 		case *pb.ContentBlock_ResourceLink:
 			actualResult := c.ResourceLink.Resource.Uri
-			if actualResult != tc.expected {
-				failStr := fmt.Sprintf("%s %v, exepected %v, observed %v", tc.tool, tc.args, tc.expected, actualResult)
-				failedAssertions = append(failedAssertions, failStr)
-			}
+			assert.Equalf(ttd.expected, actualResult, "unexpected result with %s %v", ttd.tool, ttd.args)
+
 		default:
-			return fmt.Errorf("unexpected content type: %T", c)
+			assert.Failf("callMethodResult", "GetContentunexpected content type: %T", c)
 		}
 	}
 
-	if len(failedAssertions) > 0 {
-		return fmt.Errorf("doGrpcProxyToolTests failed %d assertions:\n%s",
-			len(failedAssertions), strings.Join(failedAssertions, "\n"))
-	}
-	return nil
 }
 
 // TODO these should be done in the e2e as well, not just bufcon
-func doGrpcProxyResourceTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) error {
+func doGrpcProxyResourceTests(t *testing.T, mcpGrpcClient pb.ModelContextProtocolClient) {
 
-	sessionCtx, err := doProxyInitialize(ctx, mcpGrpcClient)
-	if err != nil {
-		return err
-	}
+	assert := assert.New(t)
+
+	sessionCtx, err := doProxyInitialize(t.Context(), mcpGrpcClient)
+	assert.NoErrorf(err, "error with doProxyInitialize")
 
 	listResourcesResult, err := mcpGrpcClient.ListResources(sessionCtx, &pb.ListResourcesRequest{})
-	if err != nil {
-		return err
-	}
+	assert.NoErrorf(err, "error with ListResources")
 
 	var resourceNamesExpected []string
 	for _, resourceProvided := range examplemcp.ResourcesProvided {
@@ -185,25 +163,20 @@ func doGrpcProxyResourceTests(ctx context.Context, mcpGrpcClient pb.ModelContext
 		resourceNamesProvided = append(resourceNamesProvided, r.Name)
 	}
 
-	if !reflect.DeepEqual(resourceNamesExpected, resourceNamesProvided) {
-		return fmt.Errorf("resources expected %v not equal resources found %v", resourceNamesExpected, resourceNamesProvided)
-	}
+	assert.Equalf(resourceNamesExpected, resourceNamesProvided, "resource names mis matched")
 
-	return nil
 }
 
 // TODO these should be done in the e2e as well, not just bufcon
-func doGrpcProxyPromptTests(ctx context.Context, mcpGrpcClient pb.ModelContextProtocolClient) error {
+func doGrpcProxyPromptTests(t *testing.T, mcpGrpcClient pb.ModelContextProtocolClient) {
 
-	sessionCtx, err := doProxyInitialize(ctx, mcpGrpcClient)
-	if err != nil {
-		return err
-	}
+	assert := assert.New(t)
+
+	sessionCtx, err := doProxyInitialize(t.Context(), mcpGrpcClient)
+	assert.NoErrorf(err, "error with doProxyInitialize")
 
 	listPromptResult, err := mcpGrpcClient.ListPrompts(sessionCtx, &pb.ListPromptsRequest{})
-	if err != nil {
-		return err
-	}
+	assert.NoErrorf(err, "error with ListPrompts")
 
 	promptNamesExpected := examplemcp.GetProvidedPrompts()
 
@@ -212,17 +185,12 @@ func doGrpcProxyPromptTests(ctx context.Context, mcpGrpcClient pb.ModelContextPr
 		promptNamesProvided = append(promptNamesProvided, p.Name)
 	}
 
-	if !reflect.DeepEqual(promptNamesExpected, promptNamesProvided) {
-		return fmt.Errorf("prompts expected %v not equal tools found %v", promptNamesExpected, promptNamesProvided)
-	}
+	assert.Equalf(promptNamesExpected, promptNamesProvided, "prompt names mis matched")
 
 	// TODO make some assertions about the prompt
 	_, err = mcpGrpcClient.GetPrompt(sessionCtx, &pb.GetPromptRequest{Name: promptNamesExpected[0]})
-	if err != nil {
-		return err
-	}
+	assert.NoErrorf(err, "error with GetPrompt")
 
-	return nil
 }
 
 func SetupAsyncMcpAndProxy(mcpServerName string) (pb.ModelContextProtocolClient, func(), error) {
@@ -278,5 +246,66 @@ func doProxyInitialize(ctx context.Context, mcpGrpcClient pb.ModelContextProtoco
 
 	clientCtx := metadata.AppendToOutgoingContext(ctx, mcpconst.MCP_SESSION_ID_HEADER, mcpSessionId[0])
 	return clientCtx, nil
+
+}
+
+func doGrpcProxyStreamTests(t *testing.T, mcpGrpcClient pb.ModelContextProtocolClient) {
+
+	sessionCtx, err := doProxyInitialize(t.Context(), mcpGrpcClient)
+	require.NoErrorf(t, err, "error with doMcpInitialize")
+
+	args := map[string]any{examplemcp.PARAM_A: 1, examplemcp.PARAM_B: 10}
+
+	argsStruct, err := structpb.NewStruct(args)
+	require.NoErrorf(t, err, "error unpacking args")
+
+	// first do the send part, stream the contents of an array to the server
+
+	callToolRequests := []*pb.CallToolRequest{
+		{Name: examplemcp.TOOL_ADD, Arguments: argsStruct.GetFields()},
+		{Name: examplemcp.TOOL_ADD, Arguments: argsStruct.GetFields()},
+		{Name: examplemcp.TOOL_ADD, Arguments: argsStruct.GetFields()},
+	}
+
+	stream, err := mcpGrpcClient.CallMethodStream(sessionCtx)
+	require.NoErrorf(t, err, "error with CallMethodStream")
+
+	for sendCount, callToolReq := range callToolRequests {
+		err = stream.Send(callToolReq)
+		if err == io.EOF {
+			break
+		}
+		require.NoErrorf(t, err, "error on stream.Send number %d", sendCount)
+	}
+
+	stream.CloseSend()
+
+	// now walk through the responses
+
+	// TODO have a select that timesout
+
+	for {
+		callMethodResult, err := stream.Recv()
+		if err == io.EOF {
+			log.Printf("got EOF in stream.Recv")
+			break
+		}
+		require.NoErrorf(t, err, "error on stream.Recv")
+
+		if callMethodResult.GetIsError() {
+			require.Fail(t, "callMethodResult was error but didnt expect it")
+		}
+
+		log.Printf("got: %v", callMethodResult)
+	}
+}
+
+func doMcpClientTests(t *testing.T, mcpGrpcClient pb.ModelContextProtocolClient) {
+
+	doGrpcProxyTests(t, mcpGrpcClient)
+	doGrpcProxyToolTests(t, mcpGrpcClient)
+	doGrpcProxyPromptTests(t, mcpGrpcClient)
+	doGrpcProxyResourceTests(t, mcpGrpcClient)
+	doGrpcProxyStreamTests(t, mcpGrpcClient)
 
 }

@@ -43,18 +43,7 @@ func TestBufconDirect(t *testing.T) {
 	defer conn.Close()
 
 	mcpGrpcClient := pb.NewModelContextProtocolClient(conn)
+	require.NotNil(t, mcpGrpcClient)
+	doMcpClientTests(t, mcpGrpcClient)
 
-	err = doGrpcProxyTests(context.Background(), mcpGrpcClient)
-	require.NoError(t, err)
-
-	err = doGrpcProxyToolTests(context.Background(), mcpGrpcClient)
-	require.NoError(t, err)
-
-	err = doGrpcProxyPromptTests(context.Background(), mcpGrpcClient)
-	require.NoError(t, err)
-
-	err = doGrpcProxyResourceTests(context.Background(), mcpGrpcClient)
-	require.NoError(t, err)
-
-	doGrpcProxyStreamTests(t, mcpGrpcClient)
 }

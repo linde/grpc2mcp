@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,9 +12,7 @@ func TestE2e(t *testing.T) {
 	require.NoError(t, err)
 	defer closeFunc()
 
-	ctx := context.Background()
-	err = doGrpcProxyTests(ctx, mcpGrpcClient)
-	require.NoError(t, err)
+	doGrpcProxyTests(t, mcpGrpcClient)
 
 }
 
@@ -25,8 +22,6 @@ func TestAllTools(t *testing.T) {
 	require.NoError(t, err)
 	defer closeFunc()
 
-	ctx := context.Background()
-	err = doGrpcProxyToolTests(ctx, mcpGrpcClient)
-	require.NoError(t, err)
+	doMcpClientTests(t, mcpGrpcClient)
 
 }
