@@ -114,35 +114,52 @@ func doGrpcProxyToolTests(t *testing.T, mcpGrpcClient pb.ModelContextProtocolCli
 		callToolRequest, err := ttd.NewToolRequest()
 		assert.NoErrorf(err, "error with NewToolRequest")
 
-		callMethodResult, err := mcpGrpcClient.CallMethod(sessionCtx, callToolRequest)
+		callToolResult, err := mcpGrpcClient.CallMethod(sessionCtx, callToolRequest)
 		assert.NoErrorf(err, "error with CallMethod")
-		assert.NotNilf(callMethodResult, "callMethodResult was not nil")
 
-		assert.Equal(ttd.isError, callMethodResult.GetIsError(), "unexpected callMethodResult error status")
-		if callMethodResult.GetIsError() {
-			continue // Continue to the next test case
-		}
+		validateCallToolResult(t, callToolResult, ttd)
 
-		contentItems := callMethodResult.GetContent()
+	}
+}
 
-		// TODO add other tests for other content types: ImageContent, AudioContent or a ResourceLink
-		switch c := contentItems[0].ContentType.(type) {
-		case *pb.ContentBlock_Text:
-			actualResult := c.Text.Text
-			assert.Equalf(ttd.expected, actualResult, "unexpected result with %s %v", ttd.tool, ttd.args)
+func validateCallToolResult(t *testing.T, callToolResult *pb.CallToolResult, ttd ToolTestData) {
+	assert := assert.New(t)
 
-		case *pb.ContentBlock_ResourceLink:
-			actualResult := c.ResourceLink.Resource.Uri
-			assert.Equalf(ttd.expected, actualResult, "unexpected result with %s %v", ttd.tool, ttd.args)
+	assert.NotNil(callToolResult)
+	assert.NotEmpty(callToolResult.GetContent(), "callToolResult content array was empty")
 
-		default:
-			assert.Failf("callMethodResult", "GetContentunexpected content type: %T", c)
-		}
+	assert.Equal(ttd.isError, callToolResult.GetIsError(), "unexpected callMethodResult error status")
+	if callToolResult.GetIsError() {
+		return // Continue to the next test case
+	}
+
+	cb := callToolResult.GetContent()[0]
+
+	if resultValue, ok := getResultFromContentBlock(cb); ok {
+		assert.EqualValues(ttd.expected, resultValue, "invalid callMethodResult")
+	} else {
+		assert.Fail("unexpected type for content block: %T", cb.GetContentType())
 	}
 
 }
 
-// TODO these should be done in the e2e as well, not just bufcon
+// assumes an already validated calltoolresult
+func getResultFromContentBlock(cb *pb.ContentBlock) (any, bool) {
+
+	switch c := cb.ContentType.(type) {
+	case *pb.ContentBlock_Text:
+		return c.Text.Text, true
+
+	case *pb.ContentBlock_ResourceLink:
+		return c.ResourceLink.Resource.Uri, true
+
+	default:
+		log.Printf("unexpected content type from GetContent(): %T", c)
+		return nil, false
+	}
+
+}
+
 func doGrpcProxyResourceTests(t *testing.T, mcpGrpcClient pb.ModelContextProtocolClient) {
 
 	assert := assert.New(t)
@@ -167,7 +184,6 @@ func doGrpcProxyResourceTests(t *testing.T, mcpGrpcClient pb.ModelContextProtoco
 
 }
 
-// TODO these should be done in the e2e as well, not just bufcon
 func doGrpcProxyPromptTests(t *testing.T, mcpGrpcClient pb.ModelContextProtocolClient) {
 
 	assert := assert.New(t)
@@ -251,27 +267,21 @@ func doProxyInitialize(ctx context.Context, mcpGrpcClient pb.ModelContextProtoco
 
 func doGrpcProxyStreamTests(t *testing.T, mcpGrpcClient pb.ModelContextProtocolClient) {
 
+	assert := assert.New(t)
 	sessionCtx, err := doProxyInitialize(t.Context(), mcpGrpcClient)
 	require.NoErrorf(t, err, "error with doMcpInitialize")
 
-	args := map[string]any{examplemcp.PARAM_A: 1, examplemcp.PARAM_B: 10}
-
-	argsStruct, err := structpb.NewStruct(args)
-	require.NoErrorf(t, err, "error unpacking args")
-
 	// first do the send part, stream the contents of an array to the server
-
-	callToolRequests := []*pb.CallToolRequest{
-		{Name: examplemcp.TOOL_ADD, Arguments: argsStruct.GetFields()},
-		{Name: examplemcp.TOOL_ADD, Arguments: argsStruct.GetFields()},
-		{Name: examplemcp.TOOL_ADD, Arguments: argsStruct.GetFields()},
-	}
 
 	stream, err := mcpGrpcClient.CallMethodStream(sessionCtx)
 	require.NoErrorf(t, err, "error with CallMethodStream")
 
-	for sendCount, callToolReq := range callToolRequests {
-		err = stream.Send(callToolReq)
+	for sendCount, callToolReq := range toolTestData {
+
+		callToolRequest, err := callToolReq.NewToolRequest()
+		assert.NoErrorf(err, "error with NewToolRequest on sendCount %d", sendCount)
+
+		err = stream.Send(callToolRequest)
 		if err == io.EOF {
 			break
 		}
@@ -282,22 +292,26 @@ func doGrpcProxyStreamTests(t *testing.T, mcpGrpcClient pb.ModelContextProtocolC
 
 	// now walk through the responses
 
-	// TODO have a select that timesout
+	numResultsReceived := 0
+	for { // TODO consider a select that times out
 
-	for {
-		callMethodResult, err := stream.Recv()
+		callToolResult, err := stream.Recv()
 		if err == io.EOF {
 			log.Printf("got EOF in stream.Recv")
 			break
 		}
+		numResultsReceived += 1
+
 		require.NoErrorf(t, err, "error on stream.Recv")
 
-		if callMethodResult.GetIsError() {
-			require.Fail(t, "callMethodResult was error but didnt expect it")
-		}
+		// subtrack one bc toolTestData is zero indexed but results received is one indexed
+		curTest := toolTestData[numResultsReceived-1]
 
-		log.Printf("got: %v", callMethodResult)
+		validateCallToolResult(t, callToolResult, curTest)
 	}
+
+	assert.Equal(len(toolTestData), numResultsReceived)
+
 }
 
 func doMcpClientTests(t *testing.T, mcpGrpcClient pb.ModelContextProtocolClient) {
