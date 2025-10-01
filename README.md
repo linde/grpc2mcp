@@ -160,8 +160,12 @@ grpcurl -H "${MCP_SESSION_HEADER}" -plaintext -d '{"name": "greet"}' \
 ### Example with github's MCP server
 
 ```bash
+
+go run main.go proxy &
+
+# in another terminal
 export GITHUB_PAT=[your token]
-grpcurl -v -plaintext -H "Authorization: Bearer ${GITHUB_PAT}" \ 
+grpcurl -v -plaintext -H "Authorization: Bearer ${GITHUB_PAT}" \
     localhost:8080  mcp.ModelContextProtocol/Initialize
 
 MCP_SESSION_HEADER=$(grpcurl -v -plaintext -H "Authorization: Bearer ${GITHUB_PAT}" \

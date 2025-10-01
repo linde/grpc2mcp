@@ -13,6 +13,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// TODO redo this logic to make it easier to read
+func methodRequiresMcpSessionHeader(method string) bool {
+	return !(strings.HasSuffix(method, "Initialize") || method == "/grpc.reflection.v1.ServerReflection/ServerReflectionInfo")
+}
+
 // TODO figure out why and explain the reason for recopying these context vars
 func getInterceptorContext(ctx context.Context, method string) (context.Context, error) {
 
@@ -30,7 +35,7 @@ func getInterceptorContext(ctx context.Context, method string) (context.Context,
 	}
 
 	// Next step is to check/process the session id, if we're not in an initialize
-	if !strings.HasSuffix(method, "Initialize") {
+	if methodRequiresMcpSessionHeader(method) {
 		sessionID := md.Get(mcpconst.MCP_SESSION_ID_HEADER)
 
 		// if we dont get a session id with our key, try the lower case version which also works with MCP servers
