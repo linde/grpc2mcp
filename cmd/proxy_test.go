@@ -17,6 +17,8 @@ func TestProxyCommand(t *testing.T) {
 }
 
 func TestRunningProxyCommand(t *testing.T) {
+	// comment this out to run ad hoc
+	t.SkipNow()
 
 	rootCmd.SetArgs([]string{"proxy", "--port=8080", "--mcp-url=https://api.githubcopilot.com/mcp/"})
 	runningCheckStr := []string{"proxy server listening on"}
