@@ -1,10 +1,11 @@
-import asyncio
+import asyncio, os
 from fastmcp import FastMCP, Client
 
 
-# TODO get the figgin port from env
-client = Client("http://localhost:8888/mcp")
-# client = Client("http://localhost:3000/mcp")
+PORT = os.environ.get('PORT', 8888)
+
+client = Client(f"http://localhost:{PORT}/mcp")
+
 
 async def initialize_result():
     async with client:
